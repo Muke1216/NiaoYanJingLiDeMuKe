@@ -1,7 +1,12 @@
 // ── 木可的毛绒收藏工具 Service Worker ──────────────────────────────────────
 // ⚠️ 每次更新 index.html 后，把下面的版本号 +1，手机会自动拉取新版本
 const CACHE_VER  = 'muke-v9';
-const CACHE_FILES = ['./index.html', './manifest.json', './icon.svg'];
+const CACHE_FILES = [
+  '/NiaoYanJingLiDeMuKe/',
+  '/NiaoYanJingLiDeMuKe/index.html',
+  '/NiaoYanJingLiDeMuKe/manifest.json',
+  '/NiaoYanJingLiDeMuKe/icon.svg'
+];
 
 // ── 安装：缓存核心文件 ─────────────────────────────────────────────────────
 self.addEventListener('install', event => {
@@ -49,7 +54,7 @@ self.addEventListener('fetch', event => {
       .catch(() => {
         // 离线时从缓存返回
         return caches.match(event.request)
-          .then(cached => cached || caches.match('./index.html'));
+          .then(cached => cached || caches.match('/NiaoYanJingLiDeMuKe/index.html'));
       })
   );
 });
