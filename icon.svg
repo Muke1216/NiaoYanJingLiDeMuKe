@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <clipPath id="c"><circle cx="256" cy="256" r="248"/></clipPath>
+  </defs>
+  <!-- 深色背景 -->
+  <circle cx="256" cy="256" r="256" fill="#141430"/>
+  <!-- 宝可梦球上半（红） -->
+  <path d="M8 256 A248 248 0 0 1 504 256Z" fill="#E3350D" clip-path="url(#c)"/>
+  <!-- 宝可梦球下半（白） -->
+  <path d="M8 256 A248 248 0 0 0 504 256Z" fill="#f0f0f5" clip-path="url(#c)"/>
+  <!-- 中间腰带 -->
+  <rect x="8" y="234" width="496" height="44" fill="#1e1e2e" clip-path="url(#c)"/>
+  <!-- 球外圆边 -->
+  <circle cx="256" cy="256" r="248" fill="none" stroke="#1e1e2e" stroke-width="18"/>
+  <!-- 中心按钮（外圈黑） -->
+  <circle cx="256" cy="256" r="68" fill="#1e1e2e"/>
+  <!-- 中心按钮（白） -->
+  <circle cx="256" cy="256" r="46" fill="#f0f0f5"/>
+  <!-- 高光 -->
+  <circle cx="238" cy="238" r="14" fill="white" opacity="0.45"/>
+</svg>
