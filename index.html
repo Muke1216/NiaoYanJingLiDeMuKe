@@ -1121,7 +1121,30 @@ body.no-notes .det-notes-section{display:none!important;}
       <button class="m-close" onclick="closeDexDetail()">✕</button>
     </div>
     <div class="m-body">
-      <div class="det-gallery" id="dex-det-gallery"></div>
+      <!-- 三格交互图片槽：点击上传/替换，✕ 删除，自动保存 -->
+      <div class="img3-grid" style="margin-bottom:13px">
+        <div class="img-slot" id="dex-det-slot-0" onclick="triggerDexDetUpload(0)">
+          <span class="slot-icon">📷</span><span class="slot-hint">主图</span>
+          <img id="dex-det-prev-0" style="display:none" alt="">
+          <div class="slot-del" onclick="removeDexDetSlot(event,0)">✕</div>
+          <div class="slot-label">主图</div>
+        </div>
+        <div class="img-slot" id="dex-det-slot-1" onclick="triggerDexDetUpload(1)">
+          <span class="slot-icon">＋</span><span class="slot-hint">图2</span>
+          <img id="dex-det-prev-1" style="display:none" alt="">
+          <div class="slot-del" onclick="removeDexDetSlot(event,1)">✕</div>
+          <div class="slot-label">图片 2</div>
+        </div>
+        <div class="img-slot" id="dex-det-slot-2" onclick="triggerDexDetUpload(2)">
+          <span class="slot-icon">＋</span><span class="slot-hint">图3</span>
+          <img id="dex-det-prev-2" style="display:none" alt="">
+          <div class="slot-del" onclick="removeDexDetSlot(event,2)">✕</div>
+          <div class="slot-label">图片 3</div>
+        </div>
+      </div>
+      <input type="file" id="ddfu-0" accept="image/*" onchange="handleDexDetFile(event,0)">
+      <input type="file" id="ddfu-1" accept="image/*" onchange="handleDexDetFile(event,1)">
+      <input type="file" id="ddfu-2" accept="image/*" onchange="handleDexDetFile(event,2)">
       <div class="det-name" id="dex-det-name"></div>
       <div class="det-brand" id="dex-det-brand"></div>
       <div class="det-grid" style="grid-template-columns:1fr 1fr">
@@ -1147,6 +1170,33 @@ body.no-notes .det-notes-section{display:none!important;}
       <button class="m-close" onclick="closeDexForm()">✕</button>
     </div>
     <div class="m-body">
+      <!-- 图鉴独立照片（与收藏照片完全隔离） -->
+      <div class="fg">
+        <label class="fl">图鉴照片 <span style="font-weight:400;color:var(--muted);font-size:11px">独立存储，不影响收藏页</span></label>
+        <div class="img3-grid">
+          <div class="img-slot" id="dex-slot-0" onclick="triggerDexUpload(0)">
+            <span class="slot-icon">📷</span><span class="slot-hint">主图</span>
+            <img id="dex-prev-0" style="display:none" alt="">
+            <div class="slot-del" onclick="removeDexSlot(event,0)">✕</div>
+            <div class="slot-label">主图</div>
+          </div>
+          <div class="img-slot" id="dex-slot-1" onclick="triggerDexUpload(1)">
+            <span class="slot-icon">＋</span><span class="slot-hint">图2</span>
+            <img id="dex-prev-1" style="display:none" alt="">
+            <div class="slot-del" onclick="removeDexSlot(event,1)">✕</div>
+            <div class="slot-label">图片 2</div>
+          </div>
+          <div class="img-slot" id="dex-slot-2" onclick="triggerDexUpload(2)">
+            <span class="slot-icon">＋</span><span class="slot-hint">图3</span>
+            <img id="dex-prev-2" style="display:none" alt="">
+            <div class="slot-del" onclick="removeDexSlot(event,2)">✕</div>
+            <div class="slot-label">图片 3</div>
+          </div>
+        </div>
+        <input type="file" id="dfu-0" accept="image/*" onchange="handleDexFile(event,0)">
+        <input type="file" id="dfu-1" accept="image/*" onchange="handleDexFile(event,1)">
+        <input type="file" id="dfu-2" accept="image/*" onchange="handleDexFile(event,2)">
+      </div>
       <div class="fg">
         <label class="fl">宝可梦名称 <span class="req">*</span></label>
         <div class="name-ac-wrap">
@@ -2580,6 +2630,123 @@ let viewingId = null;
 
 function triggerUpload(n) { document.getElementById(`fu-${n}`).click(); }
 
+// ════════════════════════════════════════
+//  Dex Image Slot Logic（图鉴独立照片，与收藏完全隔离）
+// ════════════════════════════════════════
+let dexCurFiles = [null, null, null]; // 本次编辑新上传的文件
+let dexSlotKeys = [null, null, null]; // 当前已保存的 IDB key（可被置 null 表示删除）
+
+function triggerDexUpload(n) { document.getElementById(`dfu-${n}`).click(); }
+
+async function handleDexFile(e, n) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast('⚠️ 图片不能超过 20MB'); return; }
+  e.target.value = '';
+  dexCurFiles[n] = file;
+  showDexSlot(n, URL.createObjectURL(file));
+}
+
+function showDexSlot(n, url) {
+  const slot = document.getElementById(`dex-slot-${n}`);
+  const img  = document.getElementById(`dex-prev-${n}`);
+  if (!slot || !img) return;
+  slot.classList.add('has');
+  img.src = url; img.style.display = 'block';
+  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = 'none');
+}
+
+function resetDexSlot(n) {
+  const slot = document.getElementById(`dex-slot-${n}`);
+  const img  = document.getElementById(`dex-prev-${n}`);
+  if (!slot || !img) return;
+  slot.classList.remove('has');
+  img.src = ''; img.style.display = 'none';
+  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = '');
+}
+
+function removeDexSlot(e, n) {
+  e.stopPropagation();
+  dexCurFiles[n] = null;  // 取消新上传
+  dexSlotKeys[n] = null;  // 标记已保存图片为删除
+  resetDexSlot(n);
+}
+
+// ════════════════════════════════════════
+//  Dex Detail 图片槽（自动保存，不需要点「保存」按钮）
+// ════════════════════════════════════════
+let dexDetSlotKeys = [null, null, null]; // 当前详情页各槽显示的 IDB key
+
+function triggerDexDetUpload(n) { document.getElementById(`ddfu-${n}`).click(); }
+
+function showDexDetSlot(n, url) {
+  const slot = document.getElementById(`dex-det-slot-${n}`);
+  const img  = document.getElementById(`dex-det-prev-${n}`);
+  if (!slot || !img) return;
+  slot.classList.add('has');
+  img.src = url; img.style.display = 'block';
+  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = 'none');
+}
+
+function resetDexDetSlot(n) {
+  const slot = document.getElementById(`dex-det-slot-${n}`);
+  const img  = document.getElementById(`dex-det-prev-${n}`);
+  if (!slot || !img) return;
+  slot.classList.remove('has');
+  img.src = ''; img.style.display = 'none';
+  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = '');
+}
+
+async function handleDexDetFile(e, n) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast('⚠️ 图片不能超过 20MB'); return; }
+  e.target.value = '';
+  const entry = dex.find(d => d.id === viewingDexId);
+  if (!entry) return;
+
+  const blob = await compressFile(file);
+  const key  = `deximg_${viewingDexId}_${n}`;
+  await idbPut(key, blob);
+  delete urlCache[key];
+
+  // 更新条目
+  if (!entry.dexImageKeys) entry.dexImageKeys = [null, null, null];
+  entry.dexImageKeys[n] = key;
+  entry.updatedAt = Date.now();
+  saveDex(dex);
+  dexDetSlotKeys[n] = key;
+
+  // 显示新图片
+  const url = await getURL(key);
+  if (url) showDexDetSlot(n, url);
+  renderDex();
+  toast('✅ 照片已保存');
+}
+
+async function removeDexDetSlot(e, n) {
+  e.stopPropagation();
+  const entry = dex.find(d => d.id === viewingDexId);
+  if (!entry) return;
+
+  const key = dexDetSlotKeys[n];
+
+  // 更新条目的 dexImageKeys
+  if (!entry.dexImageKeys) entry.dexImageKeys = [null, null, null];
+  entry.dexImageKeys[n] = null;
+  entry.updatedAt = Date.now();
+  saveDex(dex);
+  dexDetSlotKeys[n] = null;
+  resetDexDetSlot(n);
+  renderDex();
+
+  // 只删除图鉴自有的 IDB key（前缀 deximg_），收藏共享 key 不删
+  if (key && key.startsWith('deximg_')) {
+    try { await idbDel(key); delete urlCache[key]; } catch (ex) {}
+  }
+  toast('🗑 照片已删除');
+}
+
 async function handleFile(e, n) {
   const file = e.target.files[0];
   if (!file) return;
@@ -3380,26 +3547,22 @@ async function openDexDetail(id) {
   if (!entry) return;
   viewingDexId = id;
 
-  const keys = entry.imageKeys || [null,null,null];
-  dexThumbURLs = [];
-  const urls = await Promise.all(keys.map(k=>getURL(k)));
-  urls.forEach(u=>{ if(u) dexThumbURLs.push(u); });
+  // 重置三格槽
+  dexDetSlotKeys = [null, null, null];
+  [0, 1, 2].forEach(resetDexDetSlot);
 
-  const gallery = document.getElementById('dex-det-gallery');
-  if (!dexThumbURLs.length) {
-    gallery.className = 'det-gallery';
-    gallery.innerHTML = `<div class="det-main-img">${pokeBallSVG(90)}</div>`;
-  } else if (dexThumbURLs.length === 1) {
-    gallery.className = 'det-gallery';
-    gallery.innerHTML = `<div class="det-main-img"><img src="${dexThumbURLs[0]}" alt=""></div>`;
-  } else {
-    gallery.className = 'det-gallery multi';
-    let html = `<div class="det-main-img" id="dex-main-img"><img src="${dexThumbURLs[0]}" alt=""></div>`;
-    for (let i=0;i<dexThumbURLs.length;i++) {
-      html += `<div class="det-thumb ${i===0?'active':''}" onclick="switchDexThumb(${i})"><img src="${dexThumbURLs[i]}" alt=""></div>`;
+  // 每格：优先显示图鉴独立照片（dexImageKeys），无则回退到收藏同步图片（imageKeys）
+  const dexKeys  = entry.dexImageKeys || [null, null, null];
+  const collKeys = entry.imageKeys    || [null, null, null];
+  for (let n = 0; n < 3; n++) {
+    const key = dexKeys[n] || collKeys[n];
+    if (key) {
+      dexDetSlotKeys[n] = key;
+      const url = await getURL(key);
+      if (url) showDexDetSlot(n, url);
     }
-    gallery.innerHTML = html;
   }
+
   document.getElementById('dex-det-name').textContent   = entry.name;
   document.getElementById('dex-det-brand').textContent  = entry.brand||'品牌未知';
   document.getElementById('dex-det-brand2').textContent = entry.brand||'—';
@@ -3584,9 +3747,20 @@ function editDexCurrent() {
   if (!entry) return;
   document.getElementById('dex-det-ov').classList.remove('on');
   editingDexId = viewingDexId;
+  // 初始化图鉴图片状态
+  dexCurFiles = [null, null, null];
+  const existingDexKeys = entry.dexImageKeys || [null, null, null];
+  dexSlotKeys = [...existingDexKeys];
   document.getElementById('dex-f-name').value   = entry.name;
   document.getElementById('dex-f-series').value = entry.series||'';
   setDexBrandField(entry.brand||'');
+  // 重置并回填图鉴照片槽
+  [0, 1, 2].forEach(resetDexSlot);
+  existingDexKeys.forEach(async (k, n) => {
+    if (!k) return;
+    const url = await getURL(k);
+    if (url) showDexSlot(n, url);
+  });
   document.getElementById('dex-form-ov').classList.add('on');
 }
 function closeDexForm(e) {
@@ -3595,14 +3769,45 @@ function closeDexForm(e) {
 }
 function getDexBrand() { return document.getElementById('dex-f-brand').value.trim(); }
 function setDexBrandField(brand) { document.getElementById('dex-f-brand').value = brand||''; }
-function saveDexEntry() {
+async function saveDexEntry() {
   const name   = document.getElementById('dex-f-name').value.trim();
   const brand  = getDexBrand();
   const series = document.getElementById('dex-f-series').value.trim();
   if (!name) { toast('⚠️ 请填写宝可梦名称'); return; }
   const idx = dex.findIndex(d=>d.id===editingDexId);
   if (idx === -1) return;
-  dex[idx] = { ...dex[idx], name, brand, series, pokedexNo: lookupDexNo(name), updatedAt: Date.now() };
+
+  const existing    = dex[idx];
+  const oldDexKeys  = existing.dexImageKeys || [null, null, null];
+  // 从当前槽位状态开始（用户可能已删除某些槽）
+  const newDexKeys  = [...dexSlotKeys];
+
+  // 上传新选取的图片
+  for (let n = 0; n < 3; n++) {
+    if (dexCurFiles[n]) {
+      const blob = await compressFile(dexCurFiles[n]);
+      const key  = `deximg_${editingDexId}_${n}`;
+      await idbPut(key, blob);
+      delete urlCache[key];
+      newDexKeys[n] = key;
+    }
+  }
+
+  // 清理被替换或删除的旧图鉴 key（仅属于此条目，直接删）
+  for (let n = 0; n < 3; n++) {
+    const oldKey = oldDexKeys[n];
+    if (oldKey && oldKey !== newDexKeys[n]) {
+      try { await idbDel(oldKey); delete urlCache[oldKey]; } catch (e) {}
+    }
+  }
+
+  dex[idx] = {
+    ...existing,
+    name, brand, series,
+    pokedexNo:    lookupDexNo(name),
+    dexImageKeys: newDexKeys,
+    updatedAt:    Date.now()
+  };
   saveDex(dex);
   renderDex();
   updateTabBadges();
@@ -3706,6 +3911,8 @@ async function doBatchDeleteDex() {
     if (!collHasRef) {
       for (const k of (entry.imageKeys || [])) { if (k) orphanKeys.push(k); }
     }
+    // dexImageKeys 仅属于此条目，直接清理
+    for (const k of (entry.dexImageKeys || [])) { if (k) orphanKeys.push(k); }
   }
 
   // ② 同步删除数据
@@ -3762,6 +3969,8 @@ async function doDeleteDex() {
   if (!collHasRef) {
     for (const k of (entry?.imageKeys || [])) { if (k) orphanKeys.push(k); }
   }
+  // dexImageKeys 仅属于此图鉴条目，删除时一并清理
+  for (const k of (entry?.dexImageKeys || [])) { if (k) orphanKeys.push(k); }
 
   // ② 同步删除数据
   dex = dex.filter(d=>d.id!==viewingDexId);
@@ -3907,7 +4116,10 @@ async function doExport() {
     // Collect IDB keys for selected data
     const keySet = new Set();
     outColl.forEach(i  => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
-    outDex.forEach(d   => (d.imageKeys||[]).forEach(k => k && keySet.add(k)));
+    outDex.forEach(d   => {
+      (d.imageKeys||[]).forEach(k => k && keySet.add(k));
+      (d.dexImageKeys||[]).forEach(k => k && keySet.add(k)); // 图鉴独立照片
+    });
     outShare.forEach(s => (s.imageKeys||[]).forEach(k => k && keySet.add(k)));
 
     const images = {};
