@@ -4255,8 +4255,11 @@ async function doImport() {
     // Restore images (only keys referenced by selected data)
     const neededKeys = new Set();
     if (doColl)  (data.collection||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
-    if (doDex)   (data.dex||[]).forEach(d        => (d.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
-    if (doShare) (data.share||[]).forEach(s       => (s.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
+    if (doDex)   (data.dex||[]).forEach(d => {
+      (d.imageKeys||[]).forEach(k    => k && neededKeys.add(k));
+      (d.dexImageKeys||[]).forEach(k => k && neededKeys.add(k)); // 图鉴独立照片
+    });
+    if (doShare) (data.share||[]).forEach(s => (s.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
     const images  = data.images || {};
     const imgKeys = [...neededKeys].filter(k => images[k]);
     for (let i = 0; i < imgKeys.length; i++) {
