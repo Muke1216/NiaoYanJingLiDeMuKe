@@ -1,6 +1,6 @@
 // ── 木可的毛绒收藏工具 Service Worker ──────────────────────────────────────
 // ⚠️ 每次更新 index.html 后，把下面的版本号 +1，手机会自动拉取新版本
-const CACHE_VER  = 'muke-v9';
+const CACHE_VER  = 'muke-v10';
 const CACHE_FILES = [
   '/NiaoYanJingLiDeMuKe/',
   '/NiaoYanJingLiDeMuKe/index.html',
@@ -8,12 +8,15 @@ const CACHE_FILES = [
   '/NiaoYanJingLiDeMuKe/icon.svg'
 ];
 
-// ── 安装：缓存核心文件 ─────────────────────────────────────────────────────
+// ── 安装：逐个容错缓存，单文件失败不阻断安装 ──────────────────────────────
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_VER)
-      .then(cache => cache.addAll(CACHE_FILES))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE_VER).then(async cache => {
+      for (const file of CACHE_FILES) {
+        try { await cache.add(file); }
+        catch(e) { console.warn('[SW] 缓存失败（已忽略）:', file, e.message); }
+      }
+    }).then(() => self.skipWaiting())
   );
 });
 

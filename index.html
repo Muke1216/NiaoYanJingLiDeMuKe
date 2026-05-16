@@ -658,6 +658,11 @@ body.price-hidden #f-price{opacity:.35;pointer-events:none;}
 .sett-item-info{flex:1;min-width:0;}
 .sett-item-name{font-size:14px;font-weight:700;color:var(--text);}
 .sett-item-desc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;}
+.btn-force-update{padding:8px 16px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;
+  font-size:12px;font-weight:700;cursor:pointer;transition:.15s;}
+.btn-force-update:hover{transform:translateY(-1px);opacity:.9;}
+.btn-force-update:active{transform:none;}
 
 /* ── Feature-flag body classes ── */
 /* 物品数量：默认隐藏，打开后显示 */
@@ -1199,6 +1204,13 @@ body.no-notes .det-notes-section{display:none!important;}
         <div class="sett-header-desc">关闭后相关栏目隐藏，已填写的数据不会丢失，重新开启即可恢复显示。</div>
       </div>
       <div class="sett-list">
+        <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="sett-item-info">
+            <div class="sett-item-name">强制更新</div>
+            <div class="sett-item-desc">清除本地所有缓存并重新加载最新版本，解决版本卡住问题</div>
+          </div>
+          <button class="btn-force-update" onclick="forceUpdate()">🔄 清除缓存并强制更新</button>
+        </div>
         <div class="sett-item">
           <div class="sett-item-info">
             <div class="sett-item-name">分组</div>
@@ -4747,33 +4759,74 @@ initDB().then(async () => {
 </script>
 
 <script>
+// ── 强制清除缓存并更新 ────────────────────────────────────────────────────────
+async function forceUpdate() {
+  const btn = document.querySelector('.btn-force-update');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 清除中…'; }
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+    location.reload(true);
+  } catch(e) {
+    location.reload(true);
+  }
+}
+
 // ── PWA Service Worker Registration ──────────────────────────────────────────
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js', { scope: './' })
       .then(reg => {
-        // 当有新版本时，自动激活并提示刷新
+        reg.update().catch(() => {});
         reg.addEventListener('updatefound', () => {
           const newWorker = reg.installing;
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // 新版本已缓存，提示用户
-              const banner = document.createElement('div');
-              banner.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:9999;
-                background:#2EB8B8;color:#fff;padding:10px 16px;font-size:13px;
-                font-weight:700;text-align:center;cursor:pointer;`;
-              banner.textContent = '🎉 发现新版本，点击立即更新';
-              banner.onclick = () => { newWorker.postMessage({ type: 'SKIP_WAITING' }); location.reload(); };
-              document.body.appendChild(banner);
+              showUpdateBanner(newWorker);
             }
           });
         });
       })
       .catch(err => console.warn('SW 注册失败:', err));
 
-    // 当 SW 控制权切换时刷新页面
-    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+    // SW 控制权切换时刷新（skipWaiting 后触发）
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; location.reload(); }
+    });
   });
+}
+
+function showUpdateBanner(newWorker) {
+  if (document.getElementById('sw-update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'sw-update-banner';
+  banner.style.cssText = `position:fixed;top:0;left:0;right:0;z-index:9999;
+    background:linear-gradient(135deg,#2EB8B8,#25a0a0);color:#fff;
+    padding:11px 16px;font-size:13px;font-weight:700;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    box-shadow:0 2px 12px rgba(0,0,0,.18);`;
+  const dismissBtn = document.createElement('button');
+  dismissBtn.textContent = '稍后';
+  dismissBtn.style.cssText = `padding:5px 12px;border:1.5px solid rgba(255,255,255,.5);
+    border-radius:8px;background:none;color:#fff;font-size:12px;cursor:pointer;`;
+  dismissBtn.onclick = () => banner.remove();
+  const updateBtn = document.createElement('button');
+  updateBtn.textContent = '立即更新';
+  updateBtn.style.cssText = `padding:5px 14px;border:none;border-radius:8px;
+    background:#fff;color:#2EB8B8;font-size:12px;font-weight:700;cursor:pointer;`;
+  updateBtn.onclick = () => newWorker.postMessage({ type: 'SKIP_WAITING' });
+  const label = document.createElement('span');
+  label.textContent = '🎉 发现新版本';
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:8px;flex-shrink:0';
+  btns.append(dismissBtn, updateBtn);
+  banner.append(label, btns);
+  document.body.prepend(banner);
 }
 </script>
 </body>
