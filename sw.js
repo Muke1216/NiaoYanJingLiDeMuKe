@@ -1,26 +1,13 @@
 // ── 木可的毛绒收藏工具 Service Worker ──────────────────────────────────────
 // ⚠️ 每次更新 index.html 后，把下面的版本号 +1，手机会自动拉取新版本
-const CACHE_VER  = 'muke-v10';
-const CACHE_FILES = [
-  '/NiaoYanJingLiDeMuKe/',
-  '/NiaoYanJingLiDeMuKe/index.html',
-  '/NiaoYanJingLiDeMuKe/manifest.json',
-  '/NiaoYanJingLiDeMuKe/icon.svg'
-];
+const CACHE_VER = 'muke-v11';
 
-// ── 安装：逐个容错缓存，单文件失败不阻断安装 ──────────────────────────────
+// ── 安装：直接激活，不预缓存（预缓存失败会导致 SW 永远装不上）──────────────
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_VER).then(async cache => {
-      for (const file of CACHE_FILES) {
-        try { await cache.add(file); }
-        catch(e) { console.warn('[SW] 缓存失败（已忽略）:', file, e.message); }
-      }
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// ── 激活：删除旧版本缓存 ───────────────────────────────────────────────────
+// ── 激活：删除旧版本缓存，立即接管所有页面 ────────────────────────────────
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
@@ -31,33 +18,27 @@ self.addEventListener('activate', event => {
   );
 });
 
-// ── 接收主线程指令（用于立即激活新版本）────────────────────────────────────
+// ── 接收主线程指令 ────────────────────────────────────────────────────────
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
-// ── 请求拦截：网络优先，离线兜底 ──────────────────────────────────────────
+// ── 请求拦截：网络优先，成功后写入缓存，离线时用缓存兜底 ──────────────────
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
-  // 只处理同源请求
   const url = new URL(event.request.url);
   if (url.origin !== location.origin) return;
 
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // 成功拿到新内容 → 同时写入缓存
         if (response && response.status === 200) {
           const clone = response.clone();
           caches.open(CACHE_VER).then(cache => cache.put(event.request, clone));
         }
         return response;
       })
-      .catch(() => {
-        // 离线时从缓存返回
-        return caches.match(event.request)
-          .then(cached => cached || caches.match('/NiaoYanJingLiDeMuKe/index.html'));
-      })
+      .catch(() => caches.match(event.request))
   );
 });
