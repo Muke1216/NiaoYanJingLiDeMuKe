@@ -776,7 +776,7 @@ body.no-notes .det-notes-section{display:none!important;}
             <circle cx="20" cy="20" r="3.1" fill="#f8f8f8"/>
           </svg>
         </div>
-        <div><div class="stat-lbl">收藏总数</div><div class="stat-val" id="stat-count">0 件</div></div>
+        <div><div class="stat-lbl" id="stat-count-lbl">收藏总数</div><div class="stat-val" id="stat-count">0 件</div></div>
       </div>
       <div class="stat">
         <div class="stat-ic b">💰</div>
@@ -981,7 +981,6 @@ body.no-notes .det-notes-section{display:none!important;}
           <option value="Tomy">
           <option value="三英贸易">
           <option value="眼镜厂">
-          <option value="一番赏">
         </datalist>
       </div>
       <div class="fg">
@@ -1749,7 +1748,7 @@ function loadData()  { try { return JSON.parse(localStorage.getItem(SK)) || []; 
 function saveData(d) { try { localStorage.setItem(SK, JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
 let coll = loadData();
 
-const BRANDS = ['宝可梦中心','Tomy','三英贸易','眼镜厂','一番赏'];
+const BRANDS = ['宝可梦中心','Tomy','三英贸易','眼镜厂'];
 // Sort key: predefined brands by index, custom brands alphabetically after
 function brandSortKey(b) {
   const i = BRANDS.indexOf(b);
@@ -2478,10 +2477,9 @@ function renderGroupTabs() {
   const ungroupedCnt = coll.filter(i => !i.groupId).length;
   // 「全部」tab
   let html = `<div class="g-tab ${activeGroup===null?'active':''}" onclick="setGroup(null)">全部<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${total}</span></div>`;
-  // 「未分组」tab（有未分组物品时才显示）
-  if (ungroupedCnt > 0) {
-    html += `<div class="g-tab ${activeGroup==='__none__'?'active':''}" onclick="setGroup('__none__')">未分组<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${ungroupedCnt}</span></div>`;
-  }
+  // 「未归类」tab（仅当有未归类物品时显示）
+  if (ungroupedCnt > 0)
+    html += `<div class="g-tab ${activeGroup==='__none__'?'active':''}" onclick="setGroup('__none__')">未归类<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${ungroupedCnt}</span></div>`;
   for (const g of groups) {
     const cnt = coll.filter(i => i.groupId === g.id).length;
     html += `<div class="g-tab ${activeGroup===g.id?'active':''}" onclick="setGroup('${esc(g.id)}')">
@@ -2496,8 +2494,23 @@ function render() {
   buildTagFilterSel();
   const items = filteredSorted();
   const grid  = document.getElementById('grid');
-  const totalPrice = coll.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
-  document.getElementById('stat-count').textContent = coll.length + ' 件';
+
+  // 统计数据：选中分组时显示该分组的数量和花费，顶部 badge 始终显示全量
+  let statItems = coll;
+  let statLbl   = '收藏总数';
+  // 若当前在「未归类」但已无未归类物品，自动退回全部
+  if (activeGroup === '__none__' && !coll.some(i => !i.groupId)) activeGroup = null;
+  if (activeGroup === '__none__') {
+    statItems = coll.filter(i => !i.groupId);
+    statLbl   = '未归类';
+  } else if (activeGroup !== null) {
+    statItems = coll.filter(i => i.groupId === activeGroup);
+    const grp = groups.find(g => g.id === activeGroup);
+    statLbl   = grp ? grp.name : '当前分组';
+  }
+  const totalPrice = statItems.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
+  document.getElementById('stat-count-lbl').textContent = statLbl;
+  document.getElementById('stat-count').textContent = statItems.length + ' 件';
   applyTotalUI(totalPrice);
   updateTabBadges();
 
@@ -2544,8 +2557,12 @@ function setGroup(gid) { activeGroup = gid; render(); }
 // ════════════════════════════════════════
 function renderDexGroupBar() {
   const cont = document.getElementById('dex-group-tabs');
+  const ungroupedDexCnt = dex.filter(d => !(d.dexGroupIds||[]).length).length;
   let html = `<div class="g-tab ${activeDexGroup===null?'active':''}" onclick="setDexGroup(null)">
     全部 <span style="opacity:.65;font-size:12px;">${dex.length}</span></div>`;
+  if (ungroupedDexCnt > 0)
+    html += `<div class="g-tab ${activeDexGroup==='__none__'?'active':''}" onclick="setDexGroup('__none__')">
+      未归类 <span style="opacity:.65;font-size:12px;">${ungroupedDexCnt}</span></div>`;
   for (const g of dexGroups) {
     const cnt = dex.filter(d => (d.dexGroupIds||[]).includes(g.id)).length;
     html += `<div class="g-tab ${activeDexGroup===g.id?'active':''}" onclick="setDexGroup('${esc(g.id)}')">
@@ -2564,7 +2581,10 @@ function renderDex() {
   const sort = document.getElementById('dex-sort').value;
   let items  = [...dex];
   // filter by active dex group
-  if (activeDexGroup !== null)
+  if (activeDexGroup === '__none__' && !dex.some(d => !(d.dexGroupIds||[]).length)) activeDexGroup = null;
+  if (activeDexGroup === '__none__')
+    items = items.filter(d => !(d.dexGroupIds||[]).length);
+  else if (activeDexGroup !== null)
     items = items.filter(d => (d.dexGroupIds||[]).includes(activeDexGroup));
   if (q) items = items.filter(d =>
     d.name.toLowerCase().includes(q) ||
@@ -2862,7 +2882,7 @@ function openAdd() {
   document.getElementById('f-qty').value    = '';
   resetPriceBreakdown();
   setBrandField(''); updateSeriesDL(''); updateGroupSel();
-  document.getElementById('f-group').value = activeGroup || '';
+  document.getElementById('f-group').value = (activeGroup && activeGroup !== '__none__') ? activeGroup : '';
   formTags = []; renderFormTags();
   document.getElementById('f-dex-sync').checked = true;
   document.getElementById('f-dex-sync-row').style.display = '';  // 新增时显示
@@ -4363,7 +4383,10 @@ function getFilteredShareItems() {
   const sort = document.getElementById('share-sort')?.value || 'default';
   let items  = [...share];
   // filter by active share group
-  if (activeShareGroup !== null)
+  if (activeShareGroup === '__none__' && !share.some(s => !s.shareGroupId)) activeShareGroup = null;
+  if (activeShareGroup === '__none__')
+    items = items.filter(s => !s.shareGroupId);
+  else if (activeShareGroup !== null)
     items = items.filter(s => s.shareGroupId === activeShareGroup);
   if (q) items = items.filter(s =>
     s.name.toLowerCase().includes(q) ||
@@ -4884,8 +4907,12 @@ async function doShareImport(mode) {
 function renderShareGroupBar() {
   const cont = document.getElementById('share-group-tabs');
   if (!cont) return;
+  const ungroupedShareCnt = share.filter(s => !s.shareGroupId).length;
   let html = `<div class="g-tab ${activeShareGroup===null?'active':''}" onclick="setShareGroup(null)">
     全部 <span style="opacity:.65;font-size:12px;">${share.length}</span></div>`;
+  if (ungroupedShareCnt > 0)
+    html += `<div class="g-tab ${activeShareGroup==='__none__'?'active':''}" onclick="setShareGroup('__none__')">
+      未归类 <span style="opacity:.65;font-size:12px;">${ungroupedShareCnt}</span></div>`;
   for (const g of shareGroups) {
     const cnt = share.filter(s => s.shareGroupId === g.id).length;
     html += `<div class="g-tab ${activeShareGroup===g.id?'active':''}" onclick="setShareGroup('${esc(g.id)}')">
