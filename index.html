@@ -1260,6 +1260,14 @@ body.no-notes .det-notes-section{display:none!important;}
           </div>
           <button class="btn-force-update" onclick="forceUpdate()">🔄 清除缓存并强制更新</button>
         </div>
+        <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+          <div class="sett-item-info">
+            <div class="sett-item-name">清除所有数据</div>
+            <div class="sett-item-desc">删除全部收藏、图鉴、分享及图片，操作不可撤销</div>
+          </div>
+          <button class="btn-force-update" style="background:linear-gradient(135deg,var(--red),var(--red2))"
+            onclick="confirmClearData()">🗑 清除所有数据</button>
+        </div>
         <div class="sett-item">
           <div class="sett-item-info">
             <div class="sett-item-name">分组</div>
@@ -1416,7 +1424,7 @@ body.no-notes .det-notes-section{display:none!important;}
 <div class="overlay" id="conf-ov" onclick="closeConf(event)">
   <div class="modal confirm-modal">
     <div class="m-body">
-      <div class="conf-icon">⚠️</div>
+      <div class="conf-icon" id="conf-icon">⚠️</div>
       <div class="conf-title" id="conf-title">确认删除？</div>
       <div class="conf-text" id="conf-text">删除后将无法恢复。</div>
       <div class="conf-actions">
@@ -3838,7 +3846,7 @@ async function saveDexEntry() {
 // ════════════════════════════════════════
 //  Delete (collection + dex, shared confirm modal)
 // ════════════════════════════════════════
-let confMode = 'coll'; // 'coll' | 'dex'
+let confMode = 'coll'; // 'coll' | 'dex' | 'clearData'
 
 function confirmDel() {
   const item = coll.find(i=>i.id===viewingId);
@@ -3954,8 +3962,9 @@ async function doDelete() {
   if (confMode === 'batchColl')  { await doBatchDeleteColl();  return; }
   if (confMode === 'batchDex')   { await doBatchDeleteDex();   return; }
   if (confMode === 'batchShare') { await doBatchDeleteShare(); return; }
-  if (confMode === 'dex')   { await doDeleteDex();   return; }
-  if (confMode === 'share') { await doDeleteShare(); return; }
+  if (confMode === 'dex')       { await doDeleteDex();        return; }
+  if (confMode === 'share')     { await doDeleteShare();      return; }
+  if (confMode === 'clearData') { await doClearAllData();     return; }
 
   // Delete from collection
   const item = coll.find(i=>i.id===viewingId);
@@ -5016,6 +5025,39 @@ async function forceUpdate() {
   } catch(e) {
     location.reload(true);
   }
+}
+
+// ── 清除所有用户数据 ──────────────────────────────────────────────────────────
+function confirmClearData() {
+  confMode = 'clearData';
+  document.getElementById('conf-icon').textContent  = '⚠️';
+  document.getElementById('conf-title').textContent = '清除所有数据？';
+  document.getElementById('conf-text').textContent  =
+    '这将永久删除全部收藏、图鉴、分享记录及所有图片，操作无法撤销。\n建议先导出备份。';
+  document.getElementById('settings-ov').classList.remove('on');
+  document.getElementById('conf-ov').classList.add('on');
+}
+
+async function doClearAllData() {
+  document.getElementById('conf-ov').classList.remove('on');
+  toast('⏳ 正在清除数据…');
+  // 清除所有 localStorage 数据 key（保留外观设置）
+  const dataKeys = [SK, GK, DK, DGK, SHK, SHGK, TBK, DEX_INIT_KEY, 'muke_show_total'];
+  dataKeys.forEach(k => localStorage.removeItem(k));
+  // 清除 IndexedDB 所有图片 blob
+  try {
+    const allKeys = await new Promise(res => {
+      const tx  = db.transaction('images', 'readonly');
+      const req = tx.objectStore('images').getAllKeys();
+      req.onsuccess = () => res(req.result || []);
+      req.onerror   = () => res([]);
+    });
+    for (const k of allKeys) {
+      try { await idbDel(k); } catch(e) {}
+    }
+  } catch(e) {}
+  toast('✅ 数据已清除，即将刷新…');
+  setTimeout(() => location.reload(), 1200);
 }
 
 // ── PWA Service Worker Registration ──────────────────────────────────────────
