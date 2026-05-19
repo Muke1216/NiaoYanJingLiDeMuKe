@@ -4229,11 +4229,11 @@ async function doExport() {
     const dexGrpF   = document.getElementById('exp-dex-grp')?.value   || '';
     const shareGrpF = document.getElementById('exp-share-grp')?.value || '';
     const outColl      = expColl  ? (collGrpF  ? coll.filter(i => i.groupId === collGrpF)                                : coll)      : [];
-    const outGroups    = expColl  ? groups    : [];
+    const outGroups    = expColl  ? (collGrpF  ? groups.filter(g => g.id === collGrpF)                                  : groups)    : [];
     const outDex       = expDex   ? (dexGrpF   ? dex.filter(d => (d.dexGroupIds||[]).includes(dexGrpF))                 : dex)       : [];
-    const outDexGroups = expDex   ? dexGroups : [];
+    const outDexGroups = expDex   ? (dexGrpF   ? dexGroups.filter(g => g.id === dexGrpF)                                : dexGroups) : [];
     const outShare     = expShare ? (shareGrpF ? share.filter(s => s.shareGroupId === shareGrpF)                        : share)     : [];
-    const outShareGrps = expShare ? shareGroups : [];
+    const outShareGrps = expShare ? (shareGrpF ? shareGroups.filter(g => g.id === shareGrpF)                            : shareGroups): [];
 
     // Collect IDB keys for selected data
     const keySet = new Set();
