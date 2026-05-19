@@ -709,6 +709,26 @@ body.no-notes .det-notes-section{display:none!important;}
 }
 ::-webkit-scrollbar{width:5px;}
 ::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px;}
+
+/* ── Manual Sort / Drag ── */
+.grid.sort-manual .card{cursor:grab;}
+.grid.sort-manual .card:active{cursor:grabbing;}
+.card.dragging{opacity:.35;transform:scale(.97);}
+.card.drag-over-card{outline:3px solid var(--teal);outline-offset:2px;border-color:var(--teal);}
+.btn-sort-reset{padding:7px 12px;border:1.5px solid rgba(46,184,184,.5);border-radius:10px;
+  font-size:12px;font-weight:700;cursor:pointer;background:rgba(46,184,184,.08);
+  color:var(--teal2);transition:.15s;white-space:nowrap;flex-shrink:0;}
+.btn-sort-reset:hover{background:rgba(46,184,184,.2);border-color:var(--teal);}
+/* Export group filter */
+.exp-grp-row{margin-top:6px;display:none;}
+.exp-grp-row.on{display:block;}
+.exp-grp-lbl{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:3px;}
+.exp-grp-sel{width:100%;padding:6px 28px 6px 10px;border:1.5px solid var(--border);
+  border-radius:9px;font-size:12px;background:#fff;color:var(--text);cursor:pointer;
+  appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath fill='%238a8aaa' d='M5 7L0 0h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 9px center;}
+.exp-grp-sel:focus{outline:none;border-color:var(--teal);}
 </style>
 </head>
 <body>
@@ -803,14 +823,16 @@ body.no-notes .det-notes-section{display:none!important;}
         <span class="search-ic">🔍</span>
         <input type="text" id="q" placeholder="搜索名称、品牌、系列…" oninput="render()">
       </div>
-      <select class="sort-sel" id="sort" onchange="render()">
+      <select class="sort-sel" id="sort" onchange="onSortChange('coll')">
         <option value="default">默认排序</option>
         <option value="name">按名称</option>
         <option value="brand">按品牌</option>
         <option value="series">按系列</option>
         <option value="price_desc">价格从高到低</option>
         <option value="price_asc">价格从低到高</option>
+        <option value="manual">手动排序</option>
       </select>
+      <button class="btn-sort-reset" id="coll-sort-reset" style="display:none" onclick="resetManualOrder('coll')">↺ 重置</button>
       <button class="btn-multisel" id="coll-multisel-btn" onclick="toggleMultiSelect()">☑ 多选</button>
     </div>
     <div class="multisel-selall" id="coll-selall-row" style="display:none">
@@ -856,12 +878,14 @@ body.no-notes .det-notes-section{display:none!important;}
         <span class="search-ic">🔍</span>
         <input type="text" id="dex-q" placeholder="搜索图鉴…" oninput="renderDex()">
       </div>
-      <select class="sort-sel" id="dex-sort" onchange="renderDex()">
+      <select class="sort-sel" id="dex-sort" onchange="onSortChange('dex')">
         <option value="default">默认排序</option>
         <option value="name">按名称</option>
         <option value="brand">按品牌</option>
         <option value="series">按系列</option>
+        <option value="manual">手动排序</option>
       </select>
+      <button class="btn-sort-reset" id="dex-sort-reset" style="display:none" onclick="resetManualOrder('dex')">↺ 重置</button>
       <button class="btn-multisel" id="dex-multisel-btn" onclick="toggleDexMultiSelect()">☑ 多选</button>
     </div>
     <div class="multisel-selall" id="dex-selall-row" style="display:none">
@@ -899,12 +923,14 @@ body.no-notes .det-notes-section{display:none!important;}
         <span class="search-ic">🔍</span>
         <input type="text" id="share-q" placeholder="搜索分享…" oninput="renderShare()">
       </div>
-      <select class="sort-sel" id="share-sort" onchange="renderShare()">
+      <select class="sort-sel" id="share-sort" onchange="onSortChange('share')">
         <option value="default">默认排序</option>
         <option value="name">按名称</option>
         <option value="brand">按品牌</option>
         <option value="series">按系列</option>
+        <option value="manual">手动排序</option>
       </select>
+      <button class="btn-sort-reset" id="share-sort-reset" style="display:none" onclick="resetManualOrder('share')">↺ 重置</button>
       <button class="btn-multisel" id="share-multisel-btn" onclick="toggleShareMultiSelect()">☑ 多选</button>
     </div>
     <div class="multisel-selall" id="share-selall-row" style="display:none">
@@ -1336,11 +1362,24 @@ body.no-notes .det-notes-section{display:none!important;}
       <div id="backup-main-view">
         <div class="backup-section">
           <div class="backup-sec-title">📤 导出备份</div>
-          <div class="backup-sec-desc">选择要导出的范围，打包成 JSON 文件保存到本地。</div>
+          <div class="backup-sec-desc">选择要导出的范围，可按分组单独导出。</div>
           <div class="bsp-row">
-            <label><input type="checkbox" id="exp-cb-coll"  checked><span>收藏</span></label>
-            <label><input type="checkbox" id="exp-cb-dex"   checked><span>图鉴</span></label>
-            <label><input type="checkbox" id="exp-cb-share" checked><span>分享</span></label>
+            <label><input type="checkbox" id="exp-cb-coll"  checked onchange="updateExpGrpFilters()"><span>收藏</span></label>
+            <label><input type="checkbox" id="exp-cb-dex"   checked onchange="updateExpGrpFilters()"><span>图鉴</span></label>
+            <label><input type="checkbox" id="exp-cb-share" checked onchange="updateExpGrpFilters()"><span>分享</span></label>
+          </div>
+          <!-- 分组筛选 -->
+          <div class="exp-grp-row on" id="exp-coll-grp-row">
+            <div class="exp-grp-lbl">收藏分组筛选</div>
+            <select class="exp-grp-sel" id="exp-coll-grp"></select>
+          </div>
+          <div class="exp-grp-row on" id="exp-dex-grp-row">
+            <div class="exp-grp-lbl">图鉴分组筛选</div>
+            <select class="exp-grp-sel" id="exp-dex-grp"></select>
+          </div>
+          <div class="exp-grp-row on" id="exp-share-grp-row">
+            <div class="exp-grp-lbl">分享分组筛选</div>
+            <select class="exp-grp-sel" id="exp-share-grp"></select>
           </div>
           <button class="btn-backup btn-export" id="export-btn" onclick="doExport()">📤 开始导出</button>
         </div>
@@ -1428,8 +1467,8 @@ body.no-notes .det-notes-section{display:none!important;}
       <div class="conf-title" id="conf-title">确认删除？</div>
       <div class="conf-text" id="conf-text">删除后将无法恢复。</div>
       <div class="conf-actions">
-        <button class="btn-cc" onclick="closeConf()">再想想</button>
-        <button class="btn-cd" onclick="doDelete()">确认删除</button>
+        <button class="btn-cc" id="conf-cc-btn" onclick="closeConf()">再想想</button>
+        <button class="btn-cd" id="conf-cd-btn" onclick="doDelete()">确认删除</button>
       </div>
     </div>
   </div>
@@ -2475,7 +2514,21 @@ function filteredSorted() {
     (i.brand||'').toLowerCase().includes(q) ||
     (i.series||'').toLowerCase().includes(q)
   );
-  items.sort(collSortComparator(sort));
+  if (sort === 'manual') {
+    const order = loadManualOrder(COLL_ORDER_KEY);
+    if (order) {
+      const orderMap = new Map(order.map((id, i) => [id, i]));
+      items.sort((a, b) => {
+        const ia = orderMap.has(a.id) ? orderMap.get(a.id) : 1e9;
+        const ib = orderMap.has(b.id) ? orderMap.get(b.id) : 1e9;
+        return ia - ib;
+      });
+    } else {
+      items.sort(collSortComparator('default'));
+    }
+  } else {
+    items.sort(collSortComparator(sort));
+  }
   return items;
 }
 
@@ -2522,7 +2575,9 @@ function render() {
   applyTotalUI(totalPrice);
   updateTabBadges();
 
+  const isManualColl = document.getElementById('sort').value === 'manual';
   grid.classList.toggle('multi-sel', multiSelectMode);
+  grid.classList.toggle('sort-manual', isManualColl);
   if (!items.length) {
     const isFiltered = activeGroup !== null || document.getElementById('q').value || activeTagFilter;
     grid.innerHTML = `<div class="empty">
@@ -2534,8 +2589,11 @@ function render() {
   }
   grid.innerHTML = items.map(item => {
     const sel = selectedIds.has(item.id);
+    const dragA = isManualColl
+      ? ` draggable="true" ondragstart="onDragStart(event,'${item.id}','coll')" ondragover="onDragOver(event,'${item.id}','coll')" ondrop="onDrop(event,'${item.id}','coll')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${item.id}','coll')" ontouchmove="onTouchMove(event,'coll')" ontouchend="onTouchEnd(event,'coll')"`
+      : '';
     return `
-    <div class="card${sel?' card-selected':''}" onclick="cardClick('${item.id}')" data-card-id="${item.id}">
+    <div class="card${sel?' card-selected':''}" onclick="cardClick('${item.id}')" data-card-id="${item.id}"${dragA}>
       <div class="card-sel-badge${sel?' checked':''}">✓</div>
       <div class="c-img" data-iid="${item.id}">${pokeBallSVG(60)}</div>
       <div class="c-body">
@@ -2599,7 +2657,21 @@ function renderDex() {
     (d.brand||'').toLowerCase().includes(q) ||
     (d.series||'').toLowerCase().includes(q)
   );
-  items.sort(dexSortComparator(sort));
+  if (sort === 'manual') {
+    const order = loadManualOrder(DEX_ORDER_KEY);
+    if (order) {
+      const orderMap = new Map(order.map((id, i) => [id, i]));
+      items.sort((a, b) => {
+        const ia = orderMap.has(a.id) ? orderMap.get(a.id) : 1e9;
+        const ib = orderMap.has(b.id) ? orderMap.get(b.id) : 1e9;
+        return ia - ib;
+      });
+    } else {
+      items.sort(dexSortComparator('default'));
+    }
+  } else {
+    items.sort(dexSortComparator(sort));
+  }
 
   document.getElementById('dex-count-label').textContent = `图鉴共 ${dex.length} 个宝可梦`;
   renderDexGroupBar();
@@ -2615,8 +2687,10 @@ function renderDex() {
     return;
   }
 
+  const isManualDex = sort === 'manual';
   const collIds = new Set(coll.map(i => i.id));
   grid.classList.toggle('multi-sel', dexMultiMode);
+  grid.classList.toggle('sort-manual', isManualDex);
   grid.innerHTML = items.map(entry => {
     const inColl   = collIds.has(entry.srcId);
     const grpIds   = entry.dexGroupIds || [];
@@ -2624,7 +2698,10 @@ function renderDex() {
       ? `<div style="font-size:10px;color:var(--teal2);font-weight:700;margin-top:2px;">📁 ${grpIds.length} 个分组</div>`
       : '';
     const sel = selectedDexIds.has(entry.id);
-    return `<div class="card${sel?' card-selected':''}" onclick="dexCardClick('${entry.id}')" data-dex-card-id="${entry.id}">
+    const dragA = isManualDex
+      ? ` draggable="true" ondragstart="onDragStart(event,'${entry.id}','dex')" ondragover="onDragOver(event,'${entry.id}','dex')" ondrop="onDrop(event,'${entry.id}','dex')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${entry.id}','dex')" ontouchmove="onTouchMove(event,'dex')" ontouchend="onTouchEnd(event,'dex')"`
+      : '';
+    return `<div class="card${sel?' card-selected':''}" onclick="dexCardClick('${entry.id}')" data-dex-card-id="${entry.id}"${dragA}>
       <div class="card-sel-badge${sel?' checked':''}">✓</div>
       <div class="c-img" data-dexid="${entry.id}">${pokeBallSVG(60)}</div>
       <div class="c-body">
@@ -3869,7 +3946,11 @@ function confirmDexDel() {
 }
 function closeConf(e) {
   if (e && e.target !== document.getElementById('conf-ov')) return;
+  if (confMode === 'initManualOrder') { pendingManualSection = null; }
   document.getElementById('conf-ov').classList.remove('on');
+  // Reset button texts
+  document.getElementById('conf-cd-btn').textContent = '确认删除';
+  document.getElementById('conf-cc-btn').textContent = '再想想';
 }
 
 function batchConfirmDel() {
@@ -3959,6 +4040,7 @@ async function doBatchDeleteDex() {
 }
 
 async function doDelete() {
+  if (confMode === 'initManualOrder') { confirmInitManualOrder(); return; }
   if (confMode === 'batchColl')  { await doBatchDeleteColl();  return; }
   if (confMode === 'batchDex')   { await doBatchDeleteDex();   return; }
   if (confMode === 'batchShare') { await doBatchDeleteShare(); return; }
@@ -4109,6 +4191,14 @@ function openBackup() {
   document.getElementById('backup-confirm-view').style.display = 'none';
   document.getElementById('import-file-input').value = '';
   _pendingImportData = null;
+  // Populate group filter selects
+  const mkOpts = (arr, label) =>
+    `<option value="">全部${label}（不筛选）</option>` +
+    arr.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+  document.getElementById('exp-coll-grp').innerHTML  = mkOpts(groups, '收藏');
+  document.getElementById('exp-dex-grp').innerHTML   = mkOpts(dexGroups, '图鉴');
+  document.getElementById('exp-share-grp').innerHTML = mkOpts(shareGroups, '分享');
+  updateExpGrpFilters();
   document.getElementById('backup-ov').classList.add('on');
 }
 function closeBackup(e) {
@@ -4135,11 +4225,14 @@ async function doExport() {
   btn.textContent = '⏳ 正在打包图片…';
   try {
 
-    const outColl      = expColl  ? coll      : [];
+    const collGrpF  = document.getElementById('exp-coll-grp')?.value  || '';
+    const dexGrpF   = document.getElementById('exp-dex-grp')?.value   || '';
+    const shareGrpF = document.getElementById('exp-share-grp')?.value || '';
+    const outColl      = expColl  ? (collGrpF  ? coll.filter(i => i.groupId === collGrpF)                                : coll)      : [];
     const outGroups    = expColl  ? groups    : [];
-    const outDex       = expDex   ? dex       : [];
+    const outDex       = expDex   ? (dexGrpF   ? dex.filter(d => (d.dexGroupIds||[]).includes(dexGrpF))                 : dex)       : [];
     const outDexGroups = expDex   ? dexGroups : [];
-    const outShare     = expShare ? share      : [];
+    const outShare     = expShare ? (shareGrpF ? share.filter(s => s.shareGroupId === shareGrpF)                        : share)     : [];
     const outShareGrps = expShare ? shareGroups : [];
 
     // Collect IDB keys for selected data
@@ -4403,7 +4496,21 @@ function getFilteredShareItems() {
     (s.series||'').toLowerCase().includes(q) ||
     (s.note||'').toLowerCase().includes(q)
   );
-  items.sort(dexSortComparator(sort));
+  if (sort === 'manual') {
+    const order = loadManualOrder(SHARE_ORDER_KEY);
+    if (order) {
+      const orderMap = new Map(order.map((id, i) => [id, i]));
+      items.sort((a, b) => {
+        const ia = orderMap.has(a.id) ? orderMap.get(a.id) : 1e9;
+        const ib = orderMap.has(b.id) ? orderMap.get(b.id) : 1e9;
+        return ia - ib;
+      });
+    } else {
+      items.sort(dexSortComparator('default'));
+    }
+  } else {
+    items.sort(dexSortComparator(sort));
+  }
   return items;
 }
 
@@ -4425,6 +4532,8 @@ async function renderShare() {
     return;
   }
 
+  const isManualShare = document.getElementById('share-sort').value === 'manual';
+  grid.classList.toggle('sort-manual', isManualShare);
   const parts = [];
   for (const s of items) {
     const isSel  = selectedShareIds.has(s.id);
@@ -4432,8 +4541,11 @@ async function renderShare() {
     const imgHTML = imgURL
       ? `<div class="c-img"><img src="${imgURL}" alt=""></div>`
       : `<div class="c-img" style="display:flex;align-items:center;justify-content:center">${pokeBallSVG(48)}</div>`;
+    const dragA = isManualShare
+      ? ` draggable="true" ondragstart="onDragStart(event,'${s.id}','share')" ondragover="onDragOver(event,'${s.id}','share')" ondrop="onDrop(event,'${s.id}','share')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${s.id}','share')" ontouchmove="onTouchMove(event,'share')" ontouchend="onTouchEnd(event,'share')"`
+      : '';
     parts.push(`
-      <div class="card${isSel?' card-selected':''}" onclick="onShareCardClick('${esc(s.id)}')">
+      <div class="card${isSel?' card-selected':''}" onclick="onShareCardClick('${esc(s.id)}')" data-share-card-id="${esc(s.id)}"${dragA}>
         <div class="card-sel-badge${isSel?' checked':''}">✓</div>
         ${imgHTML}
         <div class="c-body">
@@ -5058,6 +5170,231 @@ async function doClearAllData() {
   } catch(e) {}
   toast('✅ 数据已清除，即将刷新…');
   setTimeout(() => location.reload(), 1200);
+}
+
+// ════════════════════════════════════════
+//  Manual Sort
+// ════════════════════════════════════════
+const COLL_ORDER_KEY  = 'muke_coll_manual_order';
+const DEX_ORDER_KEY   = 'muke_dex_manual_order';
+const SHARE_ORDER_KEY = 'muke_share_manual_order';
+
+function loadManualOrder(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
+}
+function saveManualOrder(key, arr) {
+  try { localStorage.setItem(key, JSON.stringify(arr)); } catch {}
+}
+
+let pendingManualSection = null;
+
+function onSortChange(section) {
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : 'share-sort';
+  const val   = document.getElementById(selId).value;
+  const key   = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  // Show reset button state
+  updateSortResetBtn(section, val);
+  // Re-render
+  if (section === 'coll') render();
+  else if (section === 'dex') renderDex();
+  else renderShare();
+}
+
+function updateSortResetBtn(section, val) {
+  const btnId = section === 'coll' ? 'coll-sort-reset' : section === 'dex' ? 'dex-sort-reset' : 'share-sort-reset';
+  const btn = document.getElementById(btnId);
+  if (btn) btn.style.display = val === 'manual' ? '' : 'none';
+}
+
+function confirmInitManualOrder() {
+  const section = pendingManualSection;
+  if (!section) return;
+  pendingManualSection = null;
+  document.getElementById('conf-ov').classList.remove('on');
+  document.getElementById('conf-cd-btn').textContent = '确认删除';
+  document.getElementById('conf-cc-btn').textContent = '再想想';
+
+  // Build initial order from current default sort
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  let items;
+  if (section === 'coll') {
+    items = [...coll]; items.sort(collSortComparator('default'));
+  } else if (section === 'dex') {
+    items = [...dex];  items.sort(dexSortComparator('default'));
+  } else {
+    items = [...share]; items.sort(dexSortComparator('default'));
+  }
+  saveManualOrder(key, items.map(i => i.id));
+
+  // Switch the sort dropdown to manual
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : 'share-sort';
+  document.getElementById(selId).value = 'manual';
+  updateSortResetBtn(section, 'manual');
+
+  if (section === 'coll') render();
+  else if (section === 'dex') renderDex();
+  else renderShare();
+  toast('✅ 手动排序已创建，拖动卡片调整顺序');
+}
+
+function resetManualOrder(section) {
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  let items;
+  if (section === 'coll') {
+    items = [...coll]; items.sort(collSortComparator('default'));
+  } else if (section === 'dex') {
+    items = [...dex];  items.sort(dexSortComparator('default'));
+  } else {
+    items = [...share]; items.sort(dexSortComparator('default'));
+  }
+  saveManualOrder(key, items.map(i => i.id));
+  if (section === 'coll') render();
+  else if (section === 'dex') renderDex();
+  else renderShare();
+  toast('↺ 已按默认顺序重置');
+}
+
+// ── Drag & Drop (Desktop HTML5) ──────────────────────────────────────────────
+let dragSrcId = null, dragSrcSection = null;
+
+function onDragStart(e, id, section) {
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  if (!loadManualOrder(key)) {
+    e.preventDefault();
+    pendingManualSection = section;
+    confMode = 'initManualOrder';
+    document.getElementById('conf-icon').textContent  = '📋';
+    document.getElementById('conf-title').textContent = '创建手动排序？';
+    document.getElementById('conf-text').textContent  = '将以当前默认顺序为基础创建手动排序。确认后即可拖动卡片调整；新增毛绒排在末尾，可手动调整。';
+    document.getElementById('conf-cd-btn').textContent = '确认创建';
+    document.getElementById('conf-cc-btn').textContent = '取消';
+    document.getElementById('conf-ov').classList.add('on');
+    return;
+  }
+  dragSrcId = id; dragSrcSection = section;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+}
+
+function onDragOver(e, id, section) {
+  if (dragSrcSection !== section || !dragSrcId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.drag-over-card').forEach(c => c.classList.remove('drag-over-card'));
+  if (id !== dragSrcId) e.currentTarget.classList.add('drag-over-card');
+}
+
+function onDrop(e, targetId, section) {
+  e.preventDefault();
+  document.querySelectorAll('.drag-over-card').forEach(c => c.classList.remove('drag-over-card'));
+  if (!dragSrcId || dragSrcId === targetId) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const insertBefore = e.clientY < rect.top + rect.height / 2;
+  doReorderManual(section, dragSrcId, targetId, insertBefore);
+  dragSrcId = null; dragSrcSection = null;
+}
+
+function onDragEnd(e) {
+  e.currentTarget.classList.remove('dragging');
+  document.querySelectorAll('.drag-over-card').forEach(c => c.classList.remove('drag-over-card'));
+  dragSrcId = null; dragSrcSection = null;
+}
+
+// ── Touch Drag (Mobile) ──────────────────────────────────────────────────────
+let touchDragId = null, touchDragSection = null, touchGhost = null, touchOrigCard = null;
+
+function onTouchStart(e, id, section) {
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  if (!loadManualOrder(key)) {
+    // Show confirmation on first touch
+    pendingManualSection = section;
+    confMode = 'initManualOrder';
+    document.getElementById('conf-icon').textContent  = '📋';
+    document.getElementById('conf-title').textContent = '创建手动排序？';
+    document.getElementById('conf-text').textContent  = '将以当前默认顺序为基础创建手动排序。确认后即可拖动卡片调整；新增毛绒排在末尾，可手动调整。';
+    document.getElementById('conf-cd-btn').textContent = '确认创建';
+    document.getElementById('conf-cc-btn').textContent = '取消';
+    document.getElementById('conf-ov').classList.add('on');
+    return;
+  }
+  touchDragId = id; touchDragSection = section;
+  const card = e.currentTarget; touchOrigCard = card;
+  const rect = card.getBoundingClientRect();
+  card.classList.add('dragging');
+  touchGhost = card.cloneNode(true);
+  touchGhost.style.cssText =
+    `position:fixed;z-index:9999;opacity:.65;pointer-events:none;
+     width:${rect.width}px;height:${rect.height}px;
+     top:${rect.top}px;left:${rect.left}px;
+     border-radius:var(--r);transition:none;`;
+  document.body.appendChild(touchGhost);
+}
+
+function onTouchMove(e, section) {
+  if (!touchDragId || touchDragSection !== section) return;
+  e.preventDefault();
+  const t = e.touches[0];
+  const w = parseInt(touchGhost.style.width);
+  const h = parseInt(touchGhost.style.height);
+  touchGhost.style.top  = (t.clientY - h / 2) + 'px';
+  touchGhost.style.left = (t.clientX - w / 2) + 'px';
+  // Find hovered card
+  touchGhost.style.display = 'none';
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  touchGhost.style.display = '';
+  const targetCard = el?.closest('[data-card-id],[data-dex-card-id],[data-share-card-id]');
+  document.querySelectorAll('.drag-over-card').forEach(c => c.classList.remove('drag-over-card'));
+  if (targetCard) {
+    const tid = targetCard.dataset.cardId || targetCard.dataset.dexCardId || targetCard.dataset.shareCardId;
+    if (tid && tid !== touchDragId) targetCard.classList.add('drag-over-card');
+  }
+}
+
+function onTouchEnd(e, section) {
+  if (!touchDragId) return;
+  const t = e.changedTouches[0];
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+  if (touchOrigCard) { touchOrigCard.classList.remove('dragging'); touchOrigCard = null; }
+  document.querySelectorAll('.drag-over-card').forEach(c => c.classList.remove('drag-over-card'));
+  const srcId = touchDragId; touchDragId = null; touchDragSection = null;
+  // Determine drop target
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const targetCard = el?.closest('[data-card-id],[data-dex-card-id],[data-share-card-id]');
+  if (!targetCard) return;
+  const targetId = targetCard.dataset.cardId || targetCard.dataset.dexCardId || targetCard.dataset.shareCardId;
+  if (!targetId || targetId === srcId) return;
+  const rect = targetCard.getBoundingClientRect();
+  const insertBefore = t.clientY < rect.top + rect.height / 2;
+  doReorderManual(section, srcId, targetId, insertBefore);
+}
+
+function doReorderManual(section, srcId, targetId, insertBefore) {
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const arr = section === 'coll' ? coll : section === 'dex' ? dex : share;
+  let order = loadManualOrder(key) || arr.map(i => i.id);
+  // Remove src then insert near target
+  order = order.filter(id => id !== srcId);
+  const ti = order.indexOf(targetId);
+  if (ti === -1) order.push(srcId);
+  else order.splice(insertBefore ? ti : ti + 1, 0, srcId);
+  // Append any IDs not yet in order (newly added items)
+  const orderSet = new Set(order);
+  arr.forEach(i => { if (!orderSet.has(i.id)) order.push(i.id); });
+  saveManualOrder(key, order);
+  if (section === 'coll') render();
+  else if (section === 'dex') renderDex();
+  else renderShare();
+}
+
+// ── Export Group Filter UI ───────────────────────────────────────────────────
+function updateExpGrpFilters() {
+  const showColl  = document.getElementById('exp-cb-coll')?.checked;
+  const showDex   = document.getElementById('exp-cb-dex')?.checked;
+  const showShare = document.getElementById('exp-cb-share')?.checked;
+  document.getElementById('exp-coll-grp-row')?.classList.toggle('on',  !!showColl);
+  document.getElementById('exp-dex-grp-row')?.classList.toggle('on',   !!showDex);
+  document.getElementById('exp-share-grp-row')?.classList.toggle('on', !!showShare);
 }
 
 // ── PWA Service Worker Registration ──────────────────────────────────────────
