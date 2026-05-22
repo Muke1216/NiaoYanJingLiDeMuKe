@@ -68,6 +68,13 @@ header{background:linear-gradient(130deg,#141430 0%,#1e1e50 60%,#252570 100%);
 /* ── 在途 Tab（琥珀色） ── */
 .main-tab[data-tab="transit"].active{color:#d97706;border-bottom-color:#d97706;}
 .main-tab[data-tab="transit"].active .tab-badge{background:rgba(217,119,6,.15);color:#d97706;}
+/* ── 周边 Tab（靛蓝色） ── */
+.main-tab[data-tab="merch"].active{color:#6366f1;border-bottom-color:#6366f1;}
+.main-tab[data-tab="merch"].active .tab-badge{background:rgba(99,102,241,.15);color:#6366f1;}
+/* ── Merch group bar ── */
+.merch-group-bar{background:#fff;border-bottom:1px solid var(--border);
+  position:sticky;top:calc(var(--hh) + var(--tbh));z-index:150;}
+body.no-groups .merch-group-bar{display:none!important;}
 /* ── Transit det actions ── */
 .btn-transit-to-coll{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
   border:none;border-radius:11px;padding:10px 0;font-size:13px;font-weight:700;
@@ -689,9 +696,14 @@ body.price-hidden #f-price{opacity:.35;pointer-events:none;}
 body.feat-count .g-tab-cnt{display:inline;}
 /* 分组关闭 */
 body.no-groups .group-bar{display:none!important;}
+body.no-groups .transit-group-bar{display:none!important;}
+body.no-groups .merch-group-bar{display:none!important;}
 body.no-groups #f-group-fg{display:none!important;}
 body.no-groups #det-group-cell{display:none!important;}
 body.no-groups .tag-filter-row{display:none!important;}  /* 标签筛选依赖分组栏位置 */
+/* 在途/周边分组栏 */
+.transit-group-bar,.merch-group-bar{background:#fff;border-bottom:1px solid var(--border);
+  position:sticky;top:calc(var(--hh) + var(--tbh));z-index:150;}
 /* 标签关闭 */
 body.no-tags #f-tags-fg{display:none!important;}
 body.no-tags #det-tags-section{display:none!important;}
@@ -783,16 +795,19 @@ body.no-notes .det-notes-section{display:none!important;}
 <!-- ── Main Tab Bar ── -->
 <div class="main-tabs-bar">
   <div class="main-tabs">
-    <button class="main-tab" data-tab="transit" id="transit-tab" style="display:none" onclick="setTab('transit')">
-      📦 在途 <span class="tab-badge" id="transit-badge">0</span>
-    </button>
     <button class="main-tab active" data-tab="collection" onclick="setTab('collection')">
       收藏 <span class="tab-badge" id="coll-badge">0</span>
     </button>
     <button class="main-tab" data-tab="dex" onclick="setTab('dex')">
       图鉴 <span class="tab-badge" id="dex-badge">0</span>
     </button>
-    <button class="main-tab" data-tab="share" onclick="setTab('share')">
+    <button class="main-tab" data-tab="transit" id="transit-tab" style="display:none" onclick="setTab('transit')">
+      📦 在途 <span class="tab-badge" id="transit-badge">0</span>
+    </button>
+    <button class="main-tab" data-tab="merch" id="merch-tab" style="display:none" onclick="setTab('merch')">
+      🎁 周边 <span class="tab-badge" id="merch-badge">0</span>
+    </button>
+    <button class="main-tab" data-tab="share" id="share-tab" style="display:none" onclick="setTab('share')">
       分享 <span class="tab-badge" id="share-badge">0</span>
     </button>
   </div>
@@ -979,9 +994,26 @@ body.no-notes .det-notes-section{display:none!important;}
 ════════════════════════════════════════ -->
 <div id="transit-section" style="display:none">
 
-  <!-- info bar -->
-  <div class="dex-info-bar">
-    <div class="dex-info-inner" id="transit-count-label">在途共 0 件</div>
+  <!-- stats bar -->
+  <div class="stats-bar">
+    <div class="stats-inner">
+      <div class="stat">
+        <div class="stat-ic a">📦</div>
+        <div><div class="stat-lbl" id="transit-stat-count-lbl">在途总数</div><div class="stat-val" id="transit-stat-count">0 件</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic b">💰</div>
+        <div>
+          <div class="stat-lbl">总花费 <button class="stat-eye" id="transit-total-eye" onclick="toggleTransitTotal()" title="显示/隐藏金额">👁</button></div>
+          <div class="stat-val" id="transit-stat-total">¥0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- group bar -->
+  <div class="transit-group-bar">
+    <div class="group-tabs" id="transit-group-tabs"></div>
   </div>
 
   <!-- toolbar -->
@@ -1018,6 +1050,77 @@ body.no-notes .det-notes-section{display:none!important;}
   </div>
 
 </div><!-- /#transit-section -->
+
+<!-- ══════════════════════════════════════
+     MERCH SECTION
+════════════════════════════════════════ -->
+<div id="merch-section" style="display:none">
+
+  <!-- ── Stats ── -->
+  <div class="stats-bar">
+    <div class="stats-inner">
+      <div class="stat">
+        <div class="stat-ic a">🎁</div>
+        <div><div class="stat-lbl">周边总数</div><div class="stat-val" id="merch-stat-count">0 件</div></div>
+      </div>
+      <div class="stat">
+        <div class="stat-ic b">💰</div>
+        <div>
+          <div class="stat-lbl">总花费
+            <button class="stat-eye" id="merch-total-eye" onclick="toggleMerchTotal()" title="显示/隐藏金额">👁</button>
+          </div>
+          <div class="stat-val" id="merch-stat-total">¥0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Group Bar ── -->
+  <div class="merch-group-bar" id="merch-group-bar"></div>
+
+  <!-- ── Toolbar ── -->
+  <div class="toolbar-wrap">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-ic">🔍</span>
+        <input type="text" id="merch-q" placeholder="搜索名称、类型、品牌…" oninput="renderMerch()">
+      </div>
+      <select class="sort-sel" id="merch-sort" onchange="onSortChange('merch')">
+        <option value="default">默认 (类型→名称→品牌)</option>
+        <option value="manual">手动排序</option>
+        <option value="newest">最新添加</option>
+        <option value="oldest">最早添加</option>
+        <option value="name">名称 A→Z</option>
+        <option value="name_desc">名称 Z→A</option>
+        <option value="type">类型</option>
+        <option value="brand">品牌</option>
+      </select>
+      <button class="btn-sort-reset" id="merch-sort-reset" style="display:none" onclick="resetManualOrder('merch')">↺ 重置</button>
+      <button class="btn-multisel" id="merch-multisel-btn" onclick="toggleMerchMultiSelect()">☑ 多选</button>
+    </div>
+    <div class="multisel-selall" id="merch-selall-row" style="display:none">
+      <button class="multisel-selall-btn" id="merch-selall-btn" onclick="merchSelectAll()">全选</button>
+      <span style="font-size:12px;color:var(--muted)" id="merch-selall-hint">点击卡片选择</span>
+    </div>
+    <div class="tag-filter-row" id="merch-tag-filter-row" style="display:none">
+      <span class="tf-lbl">🏷 标签筛选</span>
+      <select class="tf-sel" id="merch-tag-filter-sel" onchange="onMerchTagFilterChange()">
+        <option value="">全部标签</option>
+      </select>
+      <button class="tf-clear" id="merch-tf-clear-btn" onclick="clearMerchTagFilter()">✕ 清除</button>
+    </div>
+    <div class="share-toolbar-acts">
+      <button class="btn-share-act" onclick="openMerchGroupMgmt()">🗂 分组</button>
+      <button class="btn-share-act btn-share-add" onclick="openMerchAdd()">＋ 添加周边</button>
+    </div>
+  </div>
+
+  <!-- ── Grid ── -->
+  <div class="grid-wrap">
+    <div class="grid" id="merch-grid"></div>
+  </div>
+
+</div><!-- /#merch-section -->
 
 <!-- ══════════════════════════════════════
      MODALS
@@ -1065,8 +1168,12 @@ body.no-notes .det-notes-section{display:none!important;}
           <div class="ac-dd" id="f-name-dd"></div>
         </div>
       </div>
+      <div class="fg" id="f-merch-type-fg" style="display:none">
+        <label class="fl">类型</label>
+        <input class="fi" id="f-merch-type" type="text" placeholder="如：毛绒、卡牌、徽章…" maxlength="20">
+      </div>
       <div class="fg">
-        <label class="fl">品牌 <span class="req">*</span></label>
+        <label class="fl">品牌 <span class="req" id="f-brand-req">*</span></label>
         <input class="fi" id="f-brand" type="text" placeholder="输入品牌名，常用品牌可下拉选择…"
           list="brand-dl" oninput="updateSeriesDL(this.value.trim())">
         <datalist id="brand-dl">
@@ -1141,6 +1248,10 @@ body.no-notes .det-notes-section{display:none!important;}
           <div class="tag-bank" id="form-tag-bank"></div>
         </div>
       </div>
+      <div class="fg" id="f-notes-fg">
+        <label class="fl">备注</label>
+        <textarea class="fi" id="f-notes" rows="3" placeholder="添加备注（可选）…" style="resize:vertical;min-height:66px"></textarea>
+      </div>
       <label class="form-toggle-row" id="f-dex-sync-row" for="f-dex-sync">
         <div>
           <div class="form-toggle-lbl">同步到图鉴</div>
@@ -1183,7 +1294,7 @@ body.no-notes .det-notes-section{display:none!important;}
       <!-- ── Tags ── -->
       <div class="det-tags-section" id="det-tags-section" style="display:none">
         <div class="det-tags-row" id="det-tags-row"></div>
-        <div class="det-tag-input-row" id="det-tag-input-row">
+        <div class="det-tag-input-row" id="det-tag-input-row" style="display:none">
           <input id="det-tag-new-inp" type="text" placeholder="输入标签名…" maxlength="12"
             onkeydown="if(event.key==='Enter'){event.preventDefault();confirmDetTag();}
                        if(event.key==='Escape'){hideDetTagInput();}">
@@ -1193,9 +1304,7 @@ body.no-notes .det-notes-section{display:none!important;}
       <!-- ── Notes ── -->
       <div class="det-notes-section">
         <div class="det-notes-lbl">备注</div>
-        <textarea class="det-notes-ta" id="det-notes-ta" placeholder="在这里添加备注…"
-          oninput="onDetNotesInput()" onblur="saveDetNotes()"></textarea>
-        <div class="det-notes-hint" id="det-notes-hint">修改后失去焦点自动保存</div>
+        <textarea class="det-notes-ta" id="det-notes-ta" placeholder="暂无备注" readonly></textarea>
       </div>
       <div class="det-actions">
         <button class="btn-del" onclick="confirmDel()">🗑 删除</button>
@@ -1228,9 +1337,7 @@ body.no-notes .det-notes-section{display:none!important;}
       </div>
       <div class="det-notes-section">
         <div class="det-notes-lbl">备注</div>
-        <textarea class="det-notes-ta" id="transit-det-notes-ta" placeholder="在这里添加备注…"
-          oninput="onTransitNotesInput()" onblur="saveTransitNotes()"></textarea>
-        <div class="det-notes-hint" id="transit-det-notes-hint">修改后失去焦点自动保存</div>
+        <textarea class="det-notes-ta" id="transit-det-notes-ta" placeholder="暂无备注" readonly></textarea>
       </div>
       <div class="det-actions">
         <button class="btn-del" onclick="confirmTransitDel()">🗑 删除</button>
@@ -1249,30 +1356,8 @@ body.no-notes .det-notes-section{display:none!important;}
       <button class="m-close" onclick="closeDexDetail()">✕</button>
     </div>
     <div class="m-body">
-      <!-- 三格交互图片槽：点击上传/替换，✕ 删除，自动保存 -->
-      <div class="img3-grid" style="margin-bottom:13px">
-        <div class="img-slot" id="dex-det-slot-0" onclick="triggerDexDetUpload(0)">
-          <span class="slot-icon">📷</span><span class="slot-hint">主图</span>
-          <img id="dex-det-prev-0" style="display:none" alt="">
-          <div class="slot-del" onclick="removeDexDetSlot(event,0)">✕</div>
-          <div class="slot-label">主图</div>
-        </div>
-        <div class="img-slot" id="dex-det-slot-1" onclick="triggerDexDetUpload(1)">
-          <span class="slot-icon">＋</span><span class="slot-hint">图2</span>
-          <img id="dex-det-prev-1" style="display:none" alt="">
-          <div class="slot-del" onclick="removeDexDetSlot(event,1)">✕</div>
-          <div class="slot-label">图片 2</div>
-        </div>
-        <div class="img-slot" id="dex-det-slot-2" onclick="triggerDexDetUpload(2)">
-          <span class="slot-icon">＋</span><span class="slot-hint">图3</span>
-          <img id="dex-det-prev-2" style="display:none" alt="">
-          <div class="slot-del" onclick="removeDexDetSlot(event,2)">✕</div>
-          <div class="slot-label">图片 3</div>
-        </div>
-      </div>
-      <input type="file" id="ddfu-0" accept="image/*" onchange="handleDexDetFile(event,0)">
-      <input type="file" id="ddfu-1" accept="image/*" onchange="handleDexDetFile(event,1)">
-      <input type="file" id="ddfu-2" accept="image/*" onchange="handleDexDetFile(event,2)">
+      <!-- 图片展示区（动态渲染，与收藏/周边风格统一） -->
+      <div class="det-gallery" id="dex-det-gallery"></div>
       <div class="det-name" id="dex-det-name"></div>
       <div class="det-brand" id="dex-det-brand"></div>
       <div class="det-grid" style="grid-template-columns:1fr 1fr">
@@ -1281,7 +1366,6 @@ body.no-notes .det-notes-section{display:none!important;}
       </div>
       <div class="dex-info-note" id="dex-det-status"></div>
       <div class="dex-grp-tags" id="dex-det-grp-tags"></div>
-      <button class="btn-grp-assign" onclick="openDexGroupAssign()">📁 加入图鉴分组</button>
       <div class="det-actions">
         <button class="btn-del" onclick="confirmDexDel()">🗑 删除</button>
         <button class="btn-edit" onclick="editDexCurrent()">✏️ 编辑</button>
@@ -1343,10 +1427,77 @@ body.no-notes .det-notes-section{display:none!important;}
         <label class="fl">系列</label>
         <input class="fi" id="dex-f-series" type="text" placeholder="系列名称">
       </div>
+      <div class="fg">
+        <label class="fl">图鉴分组</label>
+        <button type="button" class="btn-grp-assign" onclick="openDexGroupAssign()" style="width:100%;text-align:left">📁 管理图鉴分组…</button>
+        <div class="dex-grp-tags" id="dex-form-grp-tags" style="margin-top:6px"></div>
+      </div>
       <div class="f-actions">
         <button class="btn-cancel" onclick="closeDexForm()">取消</button>
         <button class="btn-save" onclick="saveDexEntry()">💾 保存</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Transit Group Management Modal ── -->
+<div class="overlay" id="tgrp-ov" onclick="closeTransitGroupMgmt(event)">
+  <div class="modal grp-modal">
+    <div class="m-head">
+      <div class="m-title">📁 在途分组</div>
+      <button class="m-close" onclick="closeTransitGroupMgmt()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="grp-create">
+        <input class="fi" id="new-tgrp-name" placeholder="输入新分组名称…"
+          onkeydown="if(event.key==='Enter')createTransitGroup()">
+        <button class="btn-grp-add" onclick="createTransitGroup()">＋ 创建</button>
+      </div>
+      <div class="grp-list" id="tgrp-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Merch Detail Overlay ── -->
+<div class="overlay" id="merch-det-ov" onclick="closeMerchDet(event)">
+  <div class="modal" style="max-width:540px">
+    <div class="m-head">
+      <div class="m-title">🎁 周边详情</div>
+      <button class="m-close" onclick="closeMerchDet()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="det-gallery" id="merch-det-gallery"></div>
+      <div class="det-name" id="merch-det-title"></div>
+      <div class="det-meta" id="merch-det-meta"></div>
+      <div class="det-tags-section" id="merch-det-tags-section" style="display:none">
+        <div class="det-tags-row" id="merch-det-tags"></div>
+      </div>
+      <div class="det-notes-section">
+        <div class="det-notes-lbl">备注</div>
+        <textarea class="det-notes-ta" id="merch-det-notes" placeholder="暂无备注" readonly></textarea>
+      </div>
+      <div class="det-actions">
+        <button class="btn-del" onclick="confirmMerchDel()">🗑 删除</button>
+        <button class="btn-edit" onclick="editMerchCurrent()">✏️ 编辑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Merch Group Mgmt Overlay ── -->
+<div class="overlay" id="mgrp-ov" onclick="closeMerchGroupMgmt(event)">
+  <div class="modal grp-modal">
+    <div class="m-head">
+      <div class="m-title">📁 周边分组</div>
+      <button class="m-close" onclick="closeMerchGroupMgmt()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="grp-create">
+        <input class="fi" id="mgrp-new-name" placeholder="输入新分组名称…"
+          onkeydown="if(event.key==='Enter')createMerchGroup()">
+        <button class="btn-grp-add" onclick="createMerchGroup()">＋ 创建</button>
+      </div>
+      <div class="grp-list" id="mgrp-list"></div>
     </div>
   </div>
 </div>
@@ -1457,6 +1608,52 @@ body.no-notes .det-notes-section{display:none!important;}
             <span class="toggle-track"></span>
           </label>
         </div>
+        <div class="sett-item">
+          <div class="sett-item-info">
+            <div class="sett-item-name">分享模块</div>
+            <div class="sett-item-desc">记录已分享或赠出的藏品</div>
+          </div>
+          <label class="toggle-sw" for="sett-share">
+            <input type="checkbox" id="sett-share" onchange="onSettingChange('showShare',this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="sett-item">
+          <div class="sett-item-info">
+            <div class="sett-item-name">周边模块</div>
+            <div class="sett-item-desc">管理周边商品，独立数据，不与收藏图鉴互通</div>
+          </div>
+          <label class="toggle-sw" for="sett-merch">
+            <input type="checkbox" id="sett-merch" onchange="onSettingChange('showMerch',this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+        <div class="sett-item">
+          <div class="sett-item-info">
+            <div class="sett-item-name">🔒 安全模式</div>
+            <div class="sett-item-desc">开启后所有删除、图片修改、批量移动等操作均需二次确认</div>
+          </div>
+          <label class="toggle-sw" for="sett-safemode">
+            <input type="checkbox" id="sett-safemode" onchange="onSettingChange('safeMode',this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SafeGuard Confirm Overlay ── -->
+<div class="overlay" id="sg-conf-ov" onclick="sgConfirmNo()">
+  <div class="modal" style="max-width:340px" onclick="event.stopPropagation()">
+    <div class="m-head">
+      <div class="m-title">🔒 安全确认</div>
+    </div>
+    <div class="m-body">
+      <div id="sg-conf-title" style="font-size:15px;text-align:center;margin-bottom:16px;line-height:1.5"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn-del" style="flex:1" onclick="sgConfirmYes()">✅ 确认执行</button>
+        <button class="btn-edit" style="flex:1" onclick="sgConfirmNo()">✕ 取消</button>
       </div>
     </div>
   </div>
@@ -1478,6 +1675,7 @@ body.no-notes .det-notes-section{display:none!important;}
           <div class="backup-sec-desc">选择要导出的范围，可按分组单独导出。</div>
           <div class="bsp-row">
             <label id="exp-transit-label" style="display:none"><input type="checkbox" id="exp-cb-transit" checked><span>在途</span></label>
+            <label class="exp-cb-label" id="exp-cb-merch-label" style="display:none"><input type="checkbox" id="exp-cb-merch" checked> 周边数据</label>
             <label><input type="checkbox" id="exp-cb-coll"  checked onchange="updateExpGrpFilters()"><span>收藏</span></label>
             <label><input type="checkbox" id="exp-cb-dex"   checked onchange="updateExpGrpFilters()"><span>图鉴</span></label>
             <label><input type="checkbox" id="exp-cb-share" checked onchange="updateExpGrpFilters()"><span>分享</span></label>
@@ -1864,7 +2062,7 @@ async function getURL(key) {
 //  App Settings
 // ════════════════════════════════════════
 const SETT_KEY = 'muke_settings_v1';
-const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showItemCount: false, showQty: false, showTransit: false };
+const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showItemCount: false, showQty: false, showTransit: false, showShare: false, showMerch: false, safeMode: false };
 let appSettings = { ...SETT_DEFAULTS };
 (function loadSettings() {
   try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETT_KEY) || '{}')); } catch {}
@@ -1875,7 +2073,7 @@ function saveSettings() {
 }
 
 function applySettings() {
-  const { showGroups, showTags, showNotes, showItemCount, showQty, showTransit } = appSettings;
+  const { showGroups, showTags, showNotes, showItemCount, showQty, showTransit, showShare, showMerch } = appSettings;
   document.body.classList.toggle('no-groups',    !showGroups);
   document.body.classList.toggle('no-tags',      !showTags);
   document.body.classList.toggle('no-notes',     !showNotes);
@@ -1883,21 +2081,32 @@ function applySettings() {
   document.body.classList.toggle('feat-qty',     showQty);
   // 关闭分组时重置当前分组过滤
   if (!showGroups && activeGroup !== null) { activeGroup = null; }
+  if (!showGroups && activeTransitGroup !== null) { activeTransitGroup = null; }
+  if (!showGroups && activeMerchGroup !== null) { activeMerchGroup = null; }
   // 在途 tab 显隐
   const transitTab = document.getElementById('transit-tab');
   if (transitTab) transitTab.style.display = showTransit ? '' : 'none';
   // 若在途被关闭且当前正在该 tab，切回收藏
   if (!showTransit && activeTab === 'transit') setTab('collection');
+  const shareTab = document.getElementById('share-tab');
+  if (shareTab) shareTab.style.display = showShare ? '' : 'none';
+  if (!showShare && activeTab === 'share') setTab('collection');
+  const merchTab = document.getElementById('merch-tab');
+  if (merchTab) merchTab.style.display = showMerch ? '' : 'none';
+  if (!showMerch && activeTab === 'merch') setTab('collection');
 }
 
 function openSettings() {
   // 同步 checkbox 状态
-  document.getElementById('sett-groups').checked  = appSettings.showGroups;
-  document.getElementById('sett-tags').checked    = appSettings.showTags;
-  document.getElementById('sett-notes').checked   = appSettings.showNotes;
-  document.getElementById('sett-count').checked   = appSettings.showItemCount;
-  document.getElementById('sett-qty').checked     = appSettings.showQty;
-  document.getElementById('sett-transit').checked = appSettings.showTransit;
+  document.getElementById('sett-groups').checked   = appSettings.showGroups;
+  document.getElementById('sett-tags').checked     = appSettings.showTags;
+  document.getElementById('sett-notes').checked    = appSettings.showNotes;
+  document.getElementById('sett-count').checked    = appSettings.showItemCount;
+  document.getElementById('sett-qty').checked      = appSettings.showQty;
+  document.getElementById('sett-transit').checked  = appSettings.showTransit;
+  document.getElementById('sett-share').checked    = appSettings.showShare;
+  document.getElementById('sett-merch').checked    = appSettings.showMerch;
+  document.getElementById('sett-safemode').checked = appSettings.safeMode;
   document.getElementById('settings-ov').classList.add('on');
 }
 function closeSettings(e) {
@@ -1909,6 +2118,24 @@ function onSettingChange(key, val) {
   saveSettings();
   applySettings();
   render();
+}
+
+// ── 安全模式：所有破坏性操作执行前调用 ──────────────────────────
+// 若安全模式关闭，直接执行 fn；否则弹出确认对话框，用户确认后执行
+function safeGuard(message, fn) {
+  if (!appSettings.safeMode) { fn(); return; }
+  _safeGuardPending = fn;
+  document.getElementById('sg-conf-title').textContent = message;
+  document.getElementById('sg-conf-ov').classList.add('on');
+}
+let _safeGuardPending = null;
+function sgConfirmYes() {
+  document.getElementById('sg-conf-ov').classList.remove('on');
+  if (_safeGuardPending) { const fn = _safeGuardPending; _safeGuardPending = null; fn(); }
+}
+function sgConfirmNo() {
+  document.getElementById('sg-conf-ov').classList.remove('on');
+  _safeGuardPending = null;
 }
 
 // ════════════════════════════════════════
@@ -2224,10 +2451,25 @@ let share = loadShare();
 // ════════════════════════════════════════
 //  Transit data  (在途，完全独立)
 // ════════════════════════════════════════
-const TK = 'muke_transit_v1';
-function loadTransit()  { try { return JSON.parse(localStorage.getItem(TK)) || []; } catch { return []; } }
-function saveTransit(d) { try { localStorage.setItem(TK, JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
-let transit = loadTransit();
+const TK  = 'muke_transit_v1';
+const TGK = 'muke_transit_groups_v1';
+function loadTransit()       { try { return JSON.parse(localStorage.getItem(TK))  || []; } catch { return []; } }
+function saveTransit(d)      { try { localStorage.setItem(TK,  JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
+function loadTransitGroups() { try { return JSON.parse(localStorage.getItem(TGK)) || []; } catch { return []; } }
+function saveTransitGroups(g){ try { localStorage.setItem(TGK, JSON.stringify(g)); } catch { toast('存储空间不足 ⚠️'); } }
+let transit       = loadTransit();
+let transitGroups = loadTransitGroups();
+let activeTransitGroup = null;
+
+const MK  = 'muke_merch_v1';
+const MGK = 'muke_merch_groups_v1';
+function loadMerch()       { try { return JSON.parse(localStorage.getItem(MK))  || []; } catch { return []; } }
+function saveMerch(d)      { try { localStorage.setItem(MK,  JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
+function loadMerchGroups() { try { return JSON.parse(localStorage.getItem(MGK)) || []; } catch { return []; } }
+function saveMerchGroups(g){ try { localStorage.setItem(MGK, JSON.stringify(g)); } catch { toast('存储空间不足 ⚠️'); } }
+let merch       = loadMerch();
+let merchGroups = loadMerchGroups();
+let activeMerchGroup = null;
 
 // Build/update a dex entry from a collection item (no price copied).
 // Images are shared via the same IDB keys — no duplication.
@@ -2307,6 +2549,7 @@ function setTab(tab) {
   if (dexMultiMode)       cancelDexMultiSelect();
   if (shareMultiMode)     cancelShareMultiSelect();
   if (transitMultiMode)   cancelTransitMultiSelect();
+  if (merchMultiMode)     cancelMerchMultiSelect();
   activeTab = tab;
   document.querySelectorAll('.main-tab').forEach(el =>
     el.classList.toggle('active', el.dataset.tab === tab));
@@ -2314,9 +2557,11 @@ function setTab(tab) {
   document.getElementById('dex-section').style.display     = tab === 'dex'        ? '' : 'none';
   document.getElementById('share-section').style.display   = tab === 'share'      ? '' : 'none';
   document.getElementById('transit-section').style.display = tab === 'transit'    ? '' : 'none';
+  document.getElementById('merch-section').style.display   = tab === 'merch'      ? '' : 'none';
   if (tab === 'dex')     renderDex();
   if (tab === 'share')   renderShare();
   if (tab === 'transit') renderTransit();
+  if (tab === 'merch')   renderMerch();
 }
 
 function updateTabBadges() {
@@ -2324,6 +2569,7 @@ function updateTabBadges() {
   document.getElementById('dex-badge').textContent     = dex.length;
   document.getElementById('share-badge').textContent   = share.length;
   document.getElementById('transit-badge').textContent = transit.length;
+  document.getElementById('merch-badge').textContent   = merch.length;
 }
 
 // ════════════════════════════════════════
@@ -2354,7 +2600,9 @@ let shareMultiMode      = false;   // share
 let selectedShareIds    = new Set();
 let transitMultiMode    = false;   // transit
 let selectedTransitIds  = new Set();
-let batchContext     = null;    // { target:'coll'|'dex', mode:'move'|'copy' }
+let merchMultiMode      = false;   // merch
+let selectedMerchIds    = new Set();
+let batchContext     = null;    // { target:'coll'|'dex'|'merch', mode:'move'|'copy' }
 
 // ─── Toggle multi-select modes ───────────────────────────────────────────────
 function toggleMultiSelect() {
@@ -2450,14 +2698,28 @@ function updateMultiBar() {
   const countEl = document.getElementById('multi-bar-count');
   const actsEl  = document.getElementById('multi-bar-acts');
 
-  if (!multiSelectMode && !dexMultiMode && !shareMultiMode && !transitMultiMode) { bar.classList.remove('on'); return; }
+  if (!multiSelectMode && !dexMultiMode && !shareMultiMode && !transitMultiMode && !merchMultiMode) { bar.classList.remove('on'); return; }
   bar.classList.add('on');
 
-  if (transitMultiMode) {
+  if (merchMultiMode) {
+    const n = selectedMerchIds.size;
+    countEl.textContent = `已选 ${n} 件`;
+    const hasGrp = merchGroups.length > 0;
+    actsEl.innerHTML =
+      `<button class="btn-mba btn-mba-move" ${!n||!hasGrp?'disabled':''} onclick="openBatchGrpPicker('merch','move')">移动到分组</button>
+       <button class="btn-mba btn-mba-out"  ${!n?'disabled':''} onclick="batchMerchRemoveFromGroup()">移出分组</button>
+       <button class="btn-mba btn-mba-del" ${!n?'disabled':''} onclick="batchConfirmMerchDel()">🗑 删除</button>
+       <button class="btn-mba btn-mba-cancel" onclick="cancelMerchMultiSelect()">取消</button>`;
+  } else if (transitMultiMode) {
     const n = selectedTransitIds.size;
     countEl.textContent = `已选 ${n} 件`;
+    const hasGrp = transitGroups.length > 0;
     actsEl.innerHTML =
-      `<button class="btn-mba" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;" ${!n?'disabled':''} onclick="batchMoveTransitToColl()">📬 移入收藏</button>
+      `<button class="btn-mba btn-mba-move" ${!n||!hasGrp?'disabled':''} onclick="openBatchGrpPicker('transit','move')">移动到分组</button>
+       <button class="btn-mba btn-mba-out"  ${!n?'disabled':''} onclick="batchTransitRemoveFromGroup()">移出分组</button>
+       <button class="btn-mba" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;" ${!n?'disabled':''} onclick="batchMoveTransitToColl()">📬 移入收藏</button>
+       <button class="btn-mba" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;" ${!n?'disabled':''} onclick="batchCrossModule('transit','merch','copy')">📋 复制到周边</button>
+       <button class="btn-mba" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;" ${!n?'disabled':''} onclick="batchCrossModule('transit','merch','move')">➡️ 移动到周边</button>
        <button class="btn-mba btn-mba-del" ${!n?'disabled':''} onclick="batchConfirmTransitDel()">🗑 删除</button>
        <button class="btn-mba btn-mba-cancel" onclick="cancelTransitMultiSelect()">取消</button>`;
   } else if (shareMultiMode) {
@@ -2518,9 +2780,9 @@ function openBatchGrpPicker(target, mode) {
   const titleMap = { move:'移动到分组', copy:'复制到分组' };
   document.getElementById('batch-grp-title').textContent = titleMap[mode];
 
-  const srcGroups = target === 'coll' ? groups : target === 'dex' ? dexGroups : shareGroups;
+  const srcGroups = target === 'coll' ? groups : target === 'dex' ? dexGroups : target === 'transit' ? transitGroups : target === 'merch' ? merchGroups : shareGroups;
   const listEl    = document.getElementById('batch-grp-list');
-  const emptyLabel = target === 'coll' ? '收藏' : target === 'dex' ? '图鉴' : '分享';
+  const emptyLabel = target === 'coll' ? '收藏' : target === 'dex' ? '图鉴' : target === 'transit' ? '在途' : target === 'merch' ? '周边' : '分享';
 
   if (!srcGroups.length) {
     listEl.innerHTML = `<div class="batch-no-grp">还没有${emptyLabel}分组，请先创建</div>`;
@@ -2530,13 +2792,17 @@ function openBatchGrpPicker(target, mode) {
         ? coll.filter(i=>i.groupId===g.id).length
         : target === 'dex'
           ? dex.filter(d=>(d.dexGroupIds||[]).includes(g.id)).length
-          : share.filter(s=>s.shareGroupId===g.id).length;
+          : target === 'transit'
+            ? transit.filter(i=>i.groupId===g.id).length
+            : target === 'merch'
+              ? merch.filter(m=>m.groupId===g.id).length
+              : share.filter(s=>s.shareGroupId===g.id).length;
       const moveBtn = `<button class="btn-batch-act btn-batch-move" onclick="doBatchAssign('${esc(g.id)}','move')">➡️移动</button>`;
       const copyBtn = `<button class="btn-batch-act btn-batch-copy" onclick="doBatchAssign('${esc(g.id)}','copy')">📋复制</button>`;
-      // coll & share: show only the button matching batchContext.mode; dex: show both
+      // coll & share & transit: show only move; dex: show both
       const btns = target === 'dex'
         ? moveBtn + copyBtn
-        : (batchContext.mode === 'copy' ? copyBtn : moveBtn);
+        : moveBtn;
       return `<div class="batch-grp-row">
         <div class="batch-grp-name">${esc(g.name)}</div>
         <span class="batch-grp-cnt">${cnt}</span>
@@ -2581,6 +2847,30 @@ function doBatchAssign(gid, mode) {
       cancelMultiSelect();
       toast(`✅ ${n} 件已移动到「${g?.name}」`);
     }
+  } else if (ctx.target === 'transit') {
+    // Transit: move only (no copy)
+    const g = transitGroups.find(g=>g.id===gid);
+    let n = 0;
+    transit.forEach(item => {
+      if (selectedTransitIds.has(item.id)) { item.groupId = gid; item.updatedAt = Date.now(); n++; }
+    });
+    saveTransit(transit);
+    document.getElementById('batch-grp-ov').classList.remove('on');
+    cancelTransitMultiSelect();
+    renderTransit();
+    toast(`✅ ${n} 件已移动到「${g?.name}」`);
+  } else if (ctx.target === 'merch') {
+    // Merch: move only (no copy)
+    const g = merchGroups.find(g=>g.id===gid);
+    let n = 0;
+    merch.forEach(item => {
+      if (selectedMerchIds.has(item.id)) { item.groupId = gid; item.updatedAt = Date.now(); n++; }
+    });
+    saveMerch(merch);
+    document.getElementById('batch-grp-ov').classList.remove('on');
+    cancelMerchMultiSelect();
+    renderMerch();
+    toast(`✅ ${n} 件已移动到「${g?.name}」`);
   } else if (ctx.target === 'share') {
     const g = shareGroups.find(g=>g.id===gid);
     if (ctx.mode === 'copy') {
@@ -2641,6 +2931,16 @@ function batchShareRemoveFromGroup() {
   cancelShareMultiSelect();
   toast(n ? `✅ ${n} 项已移出分组` : '没有需要移出的项目');
   renderShare();
+}
+function batchTransitRemoveFromGroup() {
+  let n = 0;
+  transit.forEach(item => {
+    if (selectedTransitIds.has(item.id) && item.groupId) { item.groupId = null; item.updatedAt = Date.now(); n++; }
+  });
+  saveTransit(transit);
+  cancelTransitMultiSelect();
+  renderTransit();
+  toast(n ? `✅ ${n} 件已移出分组` : '没有需要移出的在途');
 }
 
 function batchRemoveFromGroup() {
@@ -2940,23 +3240,14 @@ let dexDetSlotKeys = [null, null, null]; // 当前详情页各槽显示的 IDB k
 
 function triggerDexDetUpload(n) { document.getElementById(`ddfu-${n}`).click(); }
 
-function showDexDetSlot(n, url) {
-  const slot = document.getElementById(`dex-det-slot-${n}`);
-  const img  = document.getElementById(`dex-det-prev-${n}`);
-  if (!slot || !img) return;
-  slot.classList.add('has');
-  img.src = url; img.style.display = 'block';
-  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = 'none');
+async function _refreshDexDetGalleryFromKeys() {
+  const validKeys = dexDetSlotKeys.filter(Boolean);
+  const urls = await Promise.all(validKeys.map(k => getURL(k)));
+  renderDexDetGallery(urls.filter(Boolean));
 }
-
-function resetDexDetSlot(n) {
-  const slot = document.getElementById(`dex-det-slot-${n}`);
-  const img  = document.getElementById(`dex-det-prev-${n}`);
-  if (!slot || !img) return;
-  slot.classList.remove('has');
-  img.src = ''; img.style.display = 'none';
-  slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display = '');
-}
+// Legacy stubs — the detail now uses det-gallery; kept so handleDexDetFile still works
+function showDexDetSlot(n, url) { _refreshDexDetGalleryFromKeys(); }
+function resetDexDetSlot(n)     { _refreshDexDetGalleryFromKeys(); }
 
 async function handleDexDetFile(e, n) {
   const file = e.target.files[0];
@@ -2987,25 +3278,22 @@ async function handleDexDetFile(e, n) {
 
 async function removeDexDetSlot(e, n) {
   e.stopPropagation();
-  const entry = dex.find(d => d.id === viewingDexId);
-  if (!entry) return;
-
-  const key = dexDetSlotKeys[n];
-
-  // 更新条目的 dexImageKeys
-  if (!entry.dexImageKeys) entry.dexImageKeys = [null, null, null];
-  entry.dexImageKeys[n] = null;
-  entry.updatedAt = Date.now();
-  saveDex(dex);
-  dexDetSlotKeys[n] = null;
-  resetDexDetSlot(n);
-  renderDex();
-
-  // 只删除图鉴自有的 IDB key（前缀 deximg_），收藏共享 key 不删
-  if (key && key.startsWith('deximg_')) {
-    try { await idbDel(key); delete urlCache[key]; } catch (ex) {}
-  }
-  toast('🗑 照片已删除');
+  safeGuard(`确认删除图鉴图片 ${n+1}？`, async () => {
+    const entry = dex.find(d => d.id === viewingDexId);
+    if (!entry) return;
+    const key = dexDetSlotKeys[n];
+    if (!entry.dexImageKeys) entry.dexImageKeys = [null, null, null];
+    entry.dexImageKeys[n] = null;
+    entry.updatedAt = Date.now();
+    saveDex(dex);
+    dexDetSlotKeys[n] = null;
+    resetDexDetSlot(n);
+    renderDex();
+    if (key && key.startsWith('deximg_')) {
+      try { await idbDel(key); delete urlCache[key]; } catch (ex) {}
+    }
+    toast('🗑 照片已删除');
+  });
 }
 
 async function handleFile(e, n) {
@@ -3023,6 +3311,7 @@ function showSlot(n, url) {
   slot.classList.add('has');
   img.src = url; img.style.display = 'block';
   slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display='none');
+  syncFormSlotVisibility();
 }
 function resetSlot(n) {
   const slot = document.getElementById(`slot-${n}`);
@@ -3031,7 +3320,27 @@ function resetSlot(n) {
   img.src = ''; img.style.display = 'none';
   slot.querySelectorAll('.slot-icon,.slot-hint').forEach(el => el.style.display='');
 }
-function removeSlot(e, n) { e.stopPropagation(); curFiles[n] = null; resetSlot(n); }
+function removeSlot(e, n) {
+  e.stopPropagation();
+  safeGuard(`确认删除图片 ${n+1}？`, () => {
+    curFiles[n] = null;
+    resetSlot(n);
+    syncFormSlotVisibility();
+  });
+}
+
+// Progressive image slot reveal: show filled slots + one next-empty slot, hide the rest
+function syncFormSlotVisibility() {
+  let lastFilled = -1;
+  for (let n = 2; n >= 0; n--) {
+    if (document.getElementById(`slot-${n}`)?.classList.contains('has')) { lastFilled = n; break; }
+  }
+  const showUpTo = Math.min(lastFilled + 1, 2); // index of next add-slot (max 2)
+  for (let n = 0; n < 3; n++) {
+    const el = document.getElementById(`slot-${n}`);
+    if (el) el.style.display = n <= showUpTo ? '' : 'none';
+  }
+}
 
 function getBrand() { return document.getElementById('f-brand').value.trim(); }
 function setBrandField(brand) { document.getElementById('f-brand').value = brand||''; }
@@ -3125,11 +3434,15 @@ function openAdd() {
   resetPriceBreakdown();
   setBrandField(''); updateSeriesDL(''); updateGroupSel();
   document.getElementById('f-group').value = (activeGroup && activeGroup !== '__none__') ? activeGroup : '';
+  document.getElementById('f-brand-req').style.display = '';
+  document.getElementById('f-merch-type-fg').style.display = 'none';
+  document.getElementById('f-notes').value = '';
   formTags = []; renderFormTags();
   document.getElementById('f-dex-sync').checked = true;
   document.getElementById('f-dex-sync-row').style.display = '';  // 新增时显示
   document.getElementById('f-group-fg').style.display = '';       // 收藏有分组
   [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
   document.getElementById('form-ov').classList.add('on');
 }
 
@@ -3143,10 +3456,16 @@ function openTransitAdd() {
   document.getElementById('f-qty').value    = '';
   resetPriceBreakdown();
   setBrandField(''); updateSeriesDL('');
+  document.getElementById('f-brand-req').style.display = 'none';
+  document.getElementById('f-merch-type-fg').style.display = 'none';
+  document.getElementById('f-notes').value = '';
+  updateTransitGroupSel();
+  document.getElementById('f-group').value = (activeTransitGroup && activeTransitGroup !== '__none__') ? activeTransitGroup : '';
   formTags = []; renderFormTags();
   document.getElementById('f-dex-sync-row').style.display = 'none'; // 在途不同步图鉴
-  document.getElementById('f-group-fg').style.display     = 'none'; // 在途无分组
+  document.getElementById('f-group-fg').style.display     = '';     // 在途有分组
   [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
   document.getElementById('form-ov').classList.add('on');
 }
 
@@ -3219,6 +3538,18 @@ function addToTagBank(tags) {
   if (changed) saveTagBank(tagBank);
 }
 
+// ── Merch-independent tag bank ────────────────────────────────
+const MTBK = 'muke_merch_tagbank_v1';
+function loadMerchTagBank()  { try { return JSON.parse(localStorage.getItem(MTBK)) || []; } catch { return []; } }
+function saveMerchTagBank(t) { try { localStorage.setItem(MTBK, JSON.stringify(t)); } catch {} }
+let merchTagBank = loadMerchTagBank();
+
+function addToMerchTagBank(tags) {
+  let changed = false;
+  tags.forEach(t => { if (t && !merchTagBank.includes(t)) { merchTagBank.push(t); changed = true; } });
+  if (changed) saveMerchTagBank(merchTagBank);
+}
+
 // Sort an array of tags according to the global tagBank order
 function sortTagsByOrder(tags) {
   if (!tags || !tags.length) return [];
@@ -3237,7 +3568,9 @@ function renderTagBank() {
   const wrap = document.getElementById('form-tag-bank-wrap');
   const cont = document.getElementById('form-tag-bank');
   if (!wrap || !cont) return;
-  const sorted = [...tagBank];  // preserve custom order
+  // 周边模块使用独立标签库
+  const activeBank = (formCtx === 'merch') ? merchTagBank : tagBank;
+  const sorted = [...activeBank];  // preserve custom order
   if (!sorted.length) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
   const full = formTags.length >= MAX_TAGS;
@@ -3653,12 +3986,8 @@ function renderDetTags(itemId) {
   const section = document.getElementById('det-tags-section');
   const row     = document.getElementById('det-tags-row');
   section.style.display = '';
-  const full = tags.length >= MAX_TAGS;
-  // 使用标签值删除，避免排序后下标对不上原始数组
-  let html = tags.map(t =>
-    `<span class="det-tag">${esc(t)}<span class="td-del" onclick="removeDetTagByVal('${itemId}','${t.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">✕</span></span>`
-  ).join('');
-  if (!full) html += `<button class="btn-det-add-tag" onclick="showDetTagInput()">＋ 标签</button>`;
+  // 只读展示：无删除、无新增按钮
+  const html = tags.map(t => `<span class="det-tag">${esc(t)}</span>`).join('');
   row.innerHTML = html;
   hideDetTagInput();
 }
@@ -3759,13 +4088,14 @@ async function saveItem() {
     priceBreakdown = null;
   }
 
-  if (!name)  { toast('⚠️ 请填写宝可梦名称'); return; }
-  if (!brand) { toast('⚠️ 请填写品牌名称'); return; }
-
   const isTransit = formCtx === 'transit';
+  const isMerch   = formCtx === 'merch';
+
+  if (!name)              { toast('⚠️ 请填写宝可梦名称'); return; }
+  if (!brand && !isTransit && !isMerch) { toast('⚠️ 请填写品牌名称'); return; }
   const isEdit    = !!editingId;
-  const id        = editingId || ((isTransit ? 't_' : 'p_') + Date.now() + '_' + Math.random().toString(36).slice(2,6));
-  const arr       = isTransit ? transit : coll;
+  const id        = editingId || ((isTransit ? 't_' : isMerch ? 'm_' : 'p_') + Date.now() + '_' + Math.random().toString(36).slice(2,6));
+  const arr       = isTransit ? transit : isMerch ? merch : coll;
   const existing  = isEdit ? arr.find(i=>i.id===id) : null;
   const oldKeys   = existing?.imageKeys || [null,null,null];
 
@@ -3781,6 +4111,7 @@ async function saveItem() {
   }
 
   const newDexNo = lookupDexNo(name);
+  const formNotes = document.getElementById('f-notes')?.value.trim() ?? '';
   const item = {
     id, name, brand, series,
     pokedexNo: newDexNo !== null ? newDexNo : (existing?.pokedexNo ?? null),
@@ -3788,13 +4119,16 @@ async function saveItem() {
     priceBreakdown, qty,
     imageKeys: newKeys,
     tags: [...formTags],
-    notes: existing?.notes || '',
+    notes: formNotes,
     createdAt: existing?.createdAt || Date.now(),
     updatedAt: Date.now()
   };
 
   if (isTransit) {
-    // ── 在途：无分组、无图鉴同步 ──
+    // ── 在途：有分组、无图鉴同步 ──
+    const formGroupId = document.getElementById('f-group').value || null;
+    const groupId = isEdit && !_editGroupDirty ? (existing?.groupId ?? null) : formGroupId;
+    item.groupId = groupId;
     if (isEdit) { const idx=transit.findIndex(i=>i.id===id); if(idx!==-1) transit[idx]=item; }
     else        { transit.unshift(item); }
     saveTransit(transit);
@@ -3802,6 +4136,21 @@ async function saveItem() {
     renderTransit();
     document.getElementById('form-ov').classList.remove('on');
     toast(isEdit ? '✅ 已更新' : '📦 已添加到在途！');
+  } else if (isMerch) {
+    // ── 周边：有分组、无图鉴同步 ──
+    const formGroupId = document.getElementById('f-group').value || null;
+    const groupId = isEdit && !_editGroupDirty ? (existing?.groupId ?? null) : formGroupId;
+    item.groupId = groupId;
+    item.type    = document.getElementById('f-merch-type').value.trim();
+    item.addedAt = existing?.addedAt || Date.now();
+    if (isEdit) { const idx=merch.findIndex(i=>i.id===id); if(idx!==-1) merch[idx]=item; }
+    else        { merch.unshift(item); }
+    saveMerch(merch);
+    addToMerchTagBank(item.tags || []);
+    updateTabBadges();
+    renderMerch();
+    document.getElementById('form-ov').classList.remove('on');
+    toast(isEdit ? '✅ 已更新' : '🎁 已添加到周边！');
   } else {
     // ── 收藏：含分组策略 + 可选图鉴同步 ──
     const formGroupId = document.getElementById('f-group').value || null;
@@ -3907,9 +4256,13 @@ function editCurrent() {
   updateGroupSel(); document.getElementById('f-group').value = item.groupId||'';
   formTags = [...(item.tags||[])]; renderFormTags();
   _editGroupDirty = false;
+  document.getElementById('f-brand-req').style.display = '';         // 收藏品牌必填
+  document.getElementById('f-merch-type-fg').style.display = 'none';
+  document.getElementById('f-notes').value = item.notes || '';
   document.getElementById('f-dex-sync-row').style.display = 'none'; // 编辑时隐藏同步开关
   document.getElementById('f-group-fg').style.display = '';          // 收藏有分组
   [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
   (item.imageKeys||[]).forEach(async(k,n)=>{
     if(!k) return; const url=await getURL(k); if(url) showSlot(n,url);
   });
@@ -3928,21 +4281,20 @@ async function openDexDetail(id) {
   if (!entry) return;
   viewingDexId = id;
 
-  // 重置三格槽
+  // 收集有效 key（优先图鉴独立照片，回退收藏同步图片）
   dexDetSlotKeys = [null, null, null];
-  [0, 1, 2].forEach(resetDexDetSlot);
-
-  // 每格：优先显示图鉴独立照片（dexImageKeys），无则回退到收藏同步图片（imageKeys）
   const dexKeys  = entry.dexImageKeys || [null, null, null];
   const collKeys = entry.imageKeys    || [null, null, null];
+  const validKeys = [];
   for (let n = 0; n < 3; n++) {
     const key = dexKeys[n] || collKeys[n];
-    if (key) {
-      dexDetSlotKeys[n] = key;
-      const url = await getURL(key);
-      if (url) showDexDetSlot(n, url);
-    }
+    dexDetSlotKeys[n] = key || null;
+    if (key) validKeys.push(key);
   }
+  // 动态渲染图片（与收藏/周边/在途详情风格统一）
+  const urls = await Promise.all(validKeys.map(k => getURL(k)));
+  const validUrls = urls.filter(Boolean);
+  renderDexDetGallery(validUrls);
 
   document.getElementById('dex-det-name').textContent   = entry.name;
   document.getElementById('dex-det-brand').textContent  = entry.brand||'品牌未知';
@@ -3958,10 +4310,7 @@ async function openDexDetail(id) {
   if (grpIds.length) {
     tagsEl.innerHTML = grpIds.map(gid => {
       const g = dexGroups.find(g=>g.id===gid);
-      if (!g) return '';
-      return `<span class="dex-grp-tag">${esc(g.name)}
-        <span class="tag-del" onclick="removeDexFromGroup('${esc(entry.id)}','${esc(gid)}')">✕</span>
-      </span>`;
+      return g ? `<span class="dex-grp-tag">${esc(g.name)}</span>` : '';
     }).join('');
     tagsEl.style.display = 'flex';
   } else {
@@ -3971,6 +4320,31 @@ async function openDexDetail(id) {
   document.getElementById('dex-det-ov').classList.add('on');
 }
 
+function renderDexDetGallery(validUrls) {
+  const gallery = document.getElementById('dex-det-gallery');
+  if (!gallery) return;
+  if (!validUrls.length) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img">${pokeBallSVG(90)}</div>`;
+  } else if (validUrls.length === 1) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img"><img src="${validUrls[0]}" alt=""></div>`;
+  } else {
+    gallery.className = 'det-gallery multi';
+    let html = `<div class="det-main-img" id="dex-det-main-img"><img src="${validUrls[0]}" alt=""></div>`;
+    for (let i = 0; i < validUrls.length; i++) {
+      html += `<div class="det-thumb ${i===0?'active':''}" onclick="switchDexDetThumb(${i})"><img src="${validUrls[i]}" alt=""></div>`;
+    }
+    gallery.innerHTML = html;
+  }
+}
+function switchDexDetThumb(i) {
+  const mainImg = document.getElementById('dex-det-main-img');
+  const thumbs  = document.querySelectorAll('#dex-det-gallery .det-thumb');
+  thumbs.forEach((el,idx) => el.classList.toggle('active', idx===i));
+  const src = thumbs[i]?.querySelector('img')?.src;
+  if (mainImg && src) mainImg.innerHTML = `<img src="${src}" alt="">`;
+}
 function switchDexThumb(i) {
   document.getElementById('dex-main-img').innerHTML = `<img src="${dexThumbURLs[i]}" alt="">`;
   document.querySelectorAll('#dex-det-gallery .det-thumb').forEach((el,idx)=>el.classList.toggle('active',idx===i));
@@ -4016,14 +4390,7 @@ function doAssignDex(mode) {
   saveDex(dex);
   // refresh group tags in detail modal
   const grpIds = entry.dexGroupIds;
-  const tagsEl = document.getElementById('dex-det-grp-tags');
-  tagsEl.innerHTML = grpIds.map(id => {
-    const g = dexGroups.find(g=>g.id===id); if (!g) return '';
-    return `<span class="dex-grp-tag">${esc(g.name)}
-      <span class="tag-del" onclick="removeDexFromGroup('${esc(entry.id)}','${esc(id)}')">✕</span>
-    </span>`;
-  }).join('');
-  tagsEl.style.display = 'flex';
+  _refreshDexGrpTags(entry);
   renderDex();
   document.getElementById('dex-assign-ov').classList.remove('on');
   const grp = dexGroups.find(g=>g.id===gid);
@@ -4035,21 +4402,22 @@ function removeDexFromGroup(entryId, gid) {
   entry.dexGroupIds = (entry.dexGroupIds||[]).filter(id=>id!==gid);
   entry.updatedAt = Date.now();
   saveDex(dex);
-  // refresh tags
-  const tagsEl = document.getElementById('dex-det-grp-tags');
-  const ids = entry.dexGroupIds;
-  if (ids.length) {
-    tagsEl.innerHTML = ids.map(id => {
-      const g = dexGroups.find(g=>g.id===id); if(!g) return '';
-      return `<span class="dex-grp-tag">${esc(g.name)}
-        <span class="tag-del" onclick="removeDexFromGroup('${esc(entryId)}','${esc(id)}')">✕</span>
-      </span>`;
-    }).join('');
-  } else {
-    tagsEl.innerHTML = ''; tagsEl.style.display = 'none';
-  }
+  _refreshDexGrpTags(entry);
   renderDex();
   toast('已从分组中移除');
+}
+
+// Helper: render read-only group tags in both dex detail and dex edit form
+function _refreshDexGrpTags(entry) {
+  const ids = entry.dexGroupIds || [];
+  const html = ids.map(id => {
+    const g = dexGroups.find(g=>g.id===id);
+    return g ? `<span class="dex-grp-tag">${esc(g.name)}</span>` : '';
+  }).join('');
+  const detEl  = document.getElementById('dex-det-grp-tags');
+  const formEl = document.getElementById('dex-form-grp-tags');
+  if (detEl)  { detEl.innerHTML  = html; detEl.style.display  = ids.length ? 'flex' : 'none'; }
+  if (formEl) { formEl.innerHTML = html; formEl.style.display = ids.length ? 'flex' : 'none'; }
 }
 
 // ════════════════════════════════════════
@@ -4142,6 +4510,8 @@ function editDexCurrent() {
     const url = await getURL(k);
     if (url) showDexSlot(n, url);
   });
+  // 初始化分组标签
+  _refreshDexGrpTags(entry);
   document.getElementById('dex-form-ov').classList.add('on');
 }
 function closeDexForm(e) {
@@ -4244,6 +4614,8 @@ function isKeyUsedElsewhere(key, excludeCollId) {
   if (coll.some(i => i.id !== excludeCollId && (i.imageKeys||[]).includes(key))) return true;
   if (dex.some(d   => (d.imageKeys||[]).includes(key))) return true;
   if (share.some(s => (s.imageKeys||[]).includes(key))) return true;
+  if (transit.some(t => (t.imageKeys||[]).includes(key))) return true;
+  if (merch.some(m => (m.imageKeys||[]).includes(key))) return true;
   return false;
 }
 // Same check starting from a share item being deleted
@@ -4251,6 +4623,24 @@ function isKeyUsedElsewhereFromShare(key, excludeShareId) {
   if (share.some(s => s.id !== excludeShareId && (s.imageKeys||[]).includes(key))) return true;
   if (coll.some(i  => (i.imageKeys||[]).includes(key))) return true;
   if (dex.some(d   => (d.imageKeys||[]).includes(key))) return true;
+  if (transit.some(t => (t.imageKeys||[]).includes(key))) return true;
+  if (merch.some(m => (m.imageKeys||[]).includes(key))) return true;
+  return false;
+}
+function isKeyUsedElsewhereFromMerch(key, excludeMerchId) {
+  if (merch.some(m => m.id !== excludeMerchId && (m.imageKeys||[]).includes(key))) return true;
+  if (coll.some(i  => (i.imageKeys||[]).includes(key))) return true;
+  if (dex.some(d   => (d.imageKeys||[]).includes(key))) return true;
+  if (share.some(s => (s.imageKeys||[]).includes(key))) return true;
+  if (transit.some(t => (t.imageKeys||[]).includes(key))) return true;
+  return false;
+}
+function isKeyUsedElsewhereFromTransit(key, excludeTransitId) {
+  if (transit.some(t => t.id !== excludeTransitId && (t.imageKeys||[]).includes(key))) return true;
+  if (coll.some(i  => (i.imageKeys||[]).includes(key))) return true;
+  if (dex.some(d   => (d.imageKeys||[]).includes(key))) return true;
+  if (share.some(s => (s.imageKeys||[]).includes(key))) return true;
+  if (merch.some(m => (m.imageKeys||[]).includes(key))) return true;
   return false;
 }
 
@@ -4322,6 +4712,8 @@ async function doDelete() {
   if (confMode === 'batchShare')   { await doBatchDeleteShare();   return; }
   if (confMode === 'transit')      { await doDeleteTransit();      return; }
   if (confMode === 'batchTransit') { await doBatchDeleteTransit(); return; }
+  if (confMode === 'merch')        { await doDeleteMerch();        return; }
+  if (confMode === 'batchMerch')   { await doBatchDeleteMerch();   return; }
   if (confMode === 'dex')       { await doDeleteDex();        return; }
   if (confMode === 'share')     { await doDeleteShare();      return; }
   if (confMode === 'clearData') { await doClearAllData();     return; }
@@ -4472,6 +4864,8 @@ function openBackup() {
   // Show/hide transit option based on setting
   const transitLabel = document.getElementById('exp-transit-label');
   if (transitLabel) transitLabel.style.display = appSettings.showTransit ? '' : 'none';
+  const merchCbLabel = document.getElementById('exp-cb-merch-label');
+  if (merchCbLabel) merchCbLabel.style.display = appSettings.showMerch ? '' : 'none';
   // Populate group filter selects
   const mkOpts = (arr, label) =>
     `<option value="">全部${label}（不筛选）</option>` +
@@ -4499,10 +4893,11 @@ function blobToBase64(blob) {
 async function doExport() {
   const btn         = document.getElementById('export-btn');
   const expTransit  = document.getElementById('exp-cb-transit')?.checked && appSettings.showTransit;
+  const expMerch    = document.getElementById('exp-cb-merch')?.checked && appSettings.showMerch;
   const expColl     = document.getElementById('exp-cb-coll')?.checked  !== false;
   const expDex      = document.getElementById('exp-cb-dex')?.checked   !== false;
   const expShare    = document.getElementById('exp-cb-share')?.checked !== false;
-  if (!expTransit && !expColl && !expDex && !expShare) { toast('⚠️ 请至少勾选一项'); return; }
+  if (!expTransit && !expMerch && !expColl && !expDex && !expShare) { toast('⚠️ 请至少勾选一项'); return; }
   btn.disabled = true;
   btn.textContent = '⏳ 正在打包图片…';
   try {
@@ -4510,7 +4905,10 @@ async function doExport() {
     const collGrpF  = document.getElementById('exp-coll-grp')?.value  || '';
     const dexGrpF   = document.getElementById('exp-dex-grp')?.value   || '';
     const shareGrpF = document.getElementById('exp-share-grp')?.value || '';
-    const outTransit   = expTransit ? transit : [];
+    const outTransit      = expTransit ? transit       : [];
+    const outTransitGrps  = expTransit ? transitGroups : [];
+    const outMerch        = expMerch   ? merch         : [];
+    const outMerchGrps    = expMerch   ? merchGroups   : [];
     const outColl      = expColl  ? (collGrpF  ? coll.filter(i => i.groupId === collGrpF)                                : coll)      : [];
     const outGroups    = expColl  ? (collGrpF  ? groups.filter(g => g.id === collGrpF)                                  : groups)    : [];
     const outDex       = expDex   ? (dexGrpF   ? dex.filter(d => (d.dexGroupIds||[]).includes(dexGrpF))                 : dex)       : [];
@@ -4521,6 +4919,7 @@ async function doExport() {
     // Collect IDB keys for selected data
     const keySet = new Set();
     outTransit.forEach(i => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
+    outMerch.forEach(i   => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
     outColl.forEach(i  => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
     outDex.forEach(d   => {
       (d.imageKeys||[]).forEach(k => k && keySet.add(k));
@@ -4549,13 +4948,17 @@ async function doExport() {
       exportScope: scopeKey,
       exportedAt: new Date().toISOString(),
       counts: {
-        transit: outTransit.length,
+        transit: outTransit.length, transitGroups: outTransitGrps.length,
+        merch: outMerch.length, merchGroups: outMerchGrps.length,
         collection: outColl.length, dex: outDex.length,
         groups: outGroups.length, dexGroups: outDexGroups.length,
         share: outShare.length, shareGroups: outShareGrps.length,
         images: Object.keys(images).length
       },
-      transit:    outTransit,
+      transit:       outTransit,
+      transitGroups: outTransitGrps,
+      merch:         outMerch,
+      merchGroups:   outMerchGrps,
       collection: outColl,
       dex:        outDex,
       groups:     outGroups,
@@ -4600,10 +5003,11 @@ function onImportFileSelected(event) {
       const data = JSON.parse(e.target.result);
       // Accept both full backups and single-scope backups (must have at least one array)
       const hasTransit = Array.isArray(data.transit);
+      const hasMerch   = Array.isArray(data.merch);
       const hasColl    = Array.isArray(data.collection);
       const hasDex     = Array.isArray(data.dex);
       const hasShare   = Array.isArray(data.share);
-      if (!data.version || (!hasTransit && !hasColl && !hasDex && !hasShare)) {
+      if (!data.version || (!hasTransit && !hasMerch && !hasColl && !hasDex && !hasShare)) {
         toast('⚠️ 不是有效的备份文件'); return;
       }
       _pendingImportData = data;
@@ -4616,7 +5020,8 @@ function onImportFileSelected(event) {
 
       // Build file info
       let infoHtml = `<b>备份时间：</b>${exportDate}<br><b>导出范围：</b>${scopeLabel}<br>`;
-      if (hasTransit) infoHtml += `<b>在途数量：</b>${data.transit.length} 件<br>`;
+      if (hasTransit) infoHtml += `<b>在途数量：</b>${data.transit.length} 件 · 在途分组 ${(data.transitGroups||[]).length} 个<br>`;
+      if (hasMerch)   infoHtml += `<b>周边数量：</b>${data.merch.length} 件 · 周边分组 ${(data.merchGroups||[]).length} 个<br>`;
       if (hasColl)    infoHtml += `<b>收藏数量：</b>${data.collection.length} 件 · 收藏分组 ${(data.groups||[]).length} 个<br>`;
       if (hasDex)     infoHtml += `<b>图鉴条目：</b>${data.dex.length} 个 · 图鉴分组 ${(data.dexGroups||[]).length} 个<br>`;
       if (hasShare)   infoHtml += `<b>分享条目：</b>${data.share.length} 项 · 分享分组 ${(data.shareGroups||[]).length} 个<br>`;
@@ -4626,6 +5031,7 @@ function onImportFileSelected(event) {
       // Build scope checkboxes (only show what's in the file)
       let cbHtml = '';
       if (hasTransit) cbHtml += `<label><input type="checkbox" id="imp-cb-transit" checked> 在途（${data.transit.length} 件）</label>`;
+      if (hasMerch)   cbHtml += `<label><input type="checkbox" id="imp-cb-merch"   checked> 周边（${data.merch.length} 件）</label>`;
       if (hasColl)    cbHtml += `<label><input type="checkbox" id="imp-cb-coll"    checked> 收藏（${data.collection.length} 件）</label>`;
       if (hasDex)     cbHtml += `<label><input type="checkbox" id="imp-cb-dex"     checked> 图鉴（${data.dex.length} 个）</label>`;
       if (hasShare)   cbHtml += `<label><input type="checkbox" id="imp-cb-share"   checked> 分享（${data.share.length} 项）</label>`;
@@ -4661,16 +5067,18 @@ async function doImport() {
   const btn  = document.getElementById('do-import-btn');
   const mode     = document.querySelector('input[name="imp-mode"]:checked')?.value || 'replace';
   const doTransit = !!document.getElementById('imp-cb-transit')?.checked;
+  const doMerch   = !!document.getElementById('imp-cb-merch')?.checked;
   const doColl    = !!document.getElementById('imp-cb-coll')?.checked;
   const doDex     = !!document.getElementById('imp-cb-dex')?.checked;
   const doShare   = !!document.getElementById('imp-cb-share')?.checked;
-  if (!doTransit && !doColl && !doDex && !doShare) { toast('⚠️ 请至少勾选一项'); return; }
+  if (!doTransit && !doMerch && !doColl && !doDex && !doShare) { toast('⚠️ 请至少勾选一项'); return; }
 
   btn.disabled = true; btn.textContent = '⏳ 导入中…';
   try {
     // Restore images (only keys referenced by selected data)
     const neededKeys = new Set();
     if (doTransit) (data.transit||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
+    if (doMerch)   (data.merch||[]).forEach(i   => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
     if (doColl)    (data.collection||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
     if (doDex)     (data.dex||[]).forEach(d => {
       (d.imageKeys||[]).forEach(k    => k && neededKeys.add(k));
@@ -4698,7 +5106,12 @@ async function doImport() {
     }
 
     if (doTransit) {
-      applyData(TK, data.transit || []);
+      applyData(TK,  data.transit       || []);
+      applyData(TGK, data.transitGroups || []);
+    }
+    if (doMerch) {
+      applyData(MK,  data.merch       || []);
+      applyData(MGK, data.merchGroups || []);
     }
     if (doColl) {
       applyData(SK,  data.collection || []);
@@ -4739,7 +5152,7 @@ function toast(msg) {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  ['form-ov','det-ov','transit-det-ov','dex-det-ov','dex-form-ov','grp-ov','dex-grp-ov','dex-assign-ov','backup-ov','batch-grp-ov','conf-ov','tag-mgmt-ov','share-det-ov','share-form-ov','share-import-ov','sgrp-ov'].forEach(id =>
+  ['form-ov','det-ov','transit-det-ov','merch-det-ov','dex-det-ov','dex-form-ov','grp-ov','tgrp-ov','mgrp-ov','dex-grp-ov','dex-assign-ov','backup-ov','batch-grp-ov','conf-ov','tag-mgmt-ov','share-det-ov','share-form-ov','share-import-ov','sgrp-ov'].forEach(id =>
     document.getElementById(id)?.classList.remove('on'));
 });
 
@@ -5479,7 +5892,7 @@ async function doClearAllData() {
   document.getElementById('conf-ov').classList.remove('on');
   toast('⏳ 正在清除数据…');
   // 清除所有 localStorage 数据 key（保留外观设置）
-  const dataKeys = [SK, GK, DK, DGK, SHK, SHGK, TBK, DEX_INIT_KEY, 'muke_show_total'];
+  const dataKeys = [SK, GK, DK, DGK, SHK, SHGK, TBK, MTBK, TK, TGK, MK, MGK, DEX_INIT_KEY, 'muke_show_total', 'muke_merch_show_total'];
   dataKeys.forEach(k => localStorage.removeItem(k));
   // 清除 IndexedDB 所有图片 blob
   try {
@@ -5504,6 +5917,12 @@ function transitFilteredSorted() {
   const q    = document.getElementById('transit-q').value.toLowerCase();
   const sort = document.getElementById('transit-sort').value;
   let items  = [...transit];
+  // Group filter
+  if (activeTransitGroup === '__none__') {
+    items = items.filter(i => !i.groupId);
+  } else if (activeTransitGroup !== null) {
+    items = items.filter(i => i.groupId === activeTransitGroup);
+  }
   if (q) items = items.filter(i =>
     i.name.toLowerCase().includes(q) ||
     (i.brand||'').toLowerCase().includes(q) ||
@@ -5523,23 +5942,58 @@ function transitFilteredSorted() {
   return items;
 }
 
+function renderTransitGroupBar() {
+  const cont = document.getElementById('transit-group-tabs');
+  if (!cont) return;
+  // 若当前「未归类」但已无未归类物品，退回全部
+  if (activeTransitGroup === '__none__' && !transit.some(i => !i.groupId)) activeTransitGroup = null;
+  const total = transit.length;
+  const ungroupedCnt = transit.filter(i => !i.groupId).length;
+  let html = `<div class="g-tab ${activeTransitGroup===null?'active':''}" onclick="setTransitGroup(null)">全部<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${total}</span></div>`;
+  if (ungroupedCnt > 0)
+    html += `<div class="g-tab ${activeTransitGroup==='__none__'?'active':''}" onclick="setTransitGroup('__none__')">未归类<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${ungroupedCnt}</span></div>`;
+  for (const g of transitGroups) {
+    const cnt = transit.filter(i => i.groupId === g.id).length;
+    html += `<div class="g-tab ${activeTransitGroup===g.id?'active':''}" onclick="setTransitGroup('${esc(g.id)}')">
+      ${esc(g.name)}<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${cnt}</span></div>`;
+  }
+  html += `<div class="g-tab g-manage" onclick="openTransitGroupMgmt()">⊕ 管理分组</div>`;
+  cont.innerHTML = html;
+}
+function setTransitGroup(gid) { activeTransitGroup = gid; renderTransit(); }
+
 function renderTransit() {
   if (activeTab !== 'transit') return; // only render when visible
+  renderTransitGroupBar();
   const items = transitFilteredSorted();
   const grid  = document.getElementById('transit-grid');
-  document.getElementById('transit-count-label').textContent = `在途共 ${transit.length} 件`;
   updateTabBadges();
+
+  // Stats
+  let statItems = transit;
+  let statLbl   = '在途总数';
+  if (activeTransitGroup === '__none__') {
+    statItems = transit.filter(i => !i.groupId); statLbl = '未归类';
+  } else if (activeTransitGroup !== null) {
+    statItems = transit.filter(i => i.groupId === activeTransitGroup);
+    const grp = transitGroups.find(g => g.id === activeTransitGroup);
+    statLbl = grp ? grp.name : '当前分组';
+  }
+  const transitTotal = statItems.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
+  document.getElementById('transit-stat-count-lbl').textContent = statLbl;
+  document.getElementById('transit-stat-count').textContent = statItems.length + ' 件';
+  applyTransitTotalUI(transitTotal);
 
   const isManual = document.getElementById('transit-sort').value === 'manual';
   grid.classList.toggle('multi-sel', transitMultiMode);
   grid.classList.toggle('sort-manual', isManual);
 
   if (!items.length) {
-    const isFiltered = document.getElementById('transit-q').value;
+    const isFiltered = activeTransitGroup !== null || document.getElementById('transit-q').value;
     grid.innerHTML = `<div class="empty">
       <div class="e-icon">${pokeBallSVG(80)}</div>
       <h3>${isFiltered ? '没有找到匹配的在途记录' : '还没有在途记录'}</h3>
-      <p>${isFiltered ? '试试修改搜索条件' : '点击「在途入库」记录快递中的藏品'}</p>
+      <p>${isFiltered ? '试试修改搜索条件或切换分组' : '点击「在途入库」记录快递中的藏品'}</p>
     </div>`;
     return;
   }
@@ -5570,6 +6024,89 @@ function renderTransit() {
     const el = document.querySelector(`.c-img[data-triid="${item.id}"]`);
     if (el) el.innerHTML = `<img src="${url}" alt="${esc(item.name)}" loading="lazy">`;
   });
+}
+
+// ════════════════════════════════════════
+//  Transit — Group Management
+// ════════════════════════════════════════
+function updateTransitGroupSel() {
+  document.getElementById('f-group').innerHTML = '<option value="">不分组</option>' +
+    transitGroups.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+}
+function openTransitGroupMgmt() {
+  renderTransitGroupList(); document.getElementById('new-tgrp-name').value='';
+  document.getElementById('tgrp-ov').classList.add('on');
+}
+function closeTransitGroupMgmt(e) {
+  if (e && e.target !== document.getElementById('tgrp-ov')) return;
+  document.getElementById('tgrp-ov').classList.remove('on');
+}
+function renderTransitGroupList() {
+  const el = document.getElementById('tgrp-list');
+  if (!transitGroups.length) { el.innerHTML='<div class="grp-empty">还没有分组，创建一个试试吧 ✨</div>'; return; }
+  const last = transitGroups.length - 1;
+  el.innerHTML = transitGroups.map((g, idx) => {
+    const cnt = transit.filter(i=>i.groupId===g.id).length;
+    return `<div class="grp-item">
+      <div class="grp-sort-btns">
+        <button class="btn-grp-mv" onclick="moveTransitGroup(${idx},-1)" ${idx===0?'disabled':''}title="上移">▲</button>
+        <button class="btn-grp-mv" onclick="moveTransitGroup(${idx},1)"  ${idx===last?'disabled':''}title="下移">▼</button>
+      </div>
+      <div class="grp-dot"></div>
+      <input class="grp-item-name" value="${esc(g.name)}"
+        onblur="renameTransitGroup('${g.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <span class="grp-item-count">${cnt} 件</span>
+      <button class="btn-grp-del" onclick="deleteTransitGroup('${g.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function moveTransitGroup(idx, delta) {
+  const newIdx = idx + delta;
+  if (newIdx < 0 || newIdx >= transitGroups.length) return;
+  [transitGroups[idx], transitGroups[newIdx]] = [transitGroups[newIdx], transitGroups[idx]];
+  saveTransitGroups(transitGroups); renderTransitGroupList(); renderTransit();
+}
+function createTransitGroup() {
+  const nameEl = document.getElementById('new-tgrp-name');
+  const name   = nameEl.value.trim();
+  if (!name) { toast('⚠️ 请填写分组名称'); return; }
+  if (transitGroups.some(g=>g.name===name)) { toast('⚠️ 分组名称已存在'); return; }
+  transitGroups.push({ id:'tg_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), name, createdAt:Date.now() });
+  saveTransitGroups(transitGroups); nameEl.value=''; renderTransitGroupList(); renderTransit(); toast('✅ 分组已创建');
+}
+function renameTransitGroup(id, newName) {
+  newName = newName.trim();
+  if (!newName) { renderTransitGroupList(); return; }
+  const g = transitGroups.find(g=>g.id===id); if(!g) return;
+  if (transitGroups.some(og=>og.name===newName&&og.id!==id)) { toast('⚠️ 名称已存在'); renderTransitGroupList(); return; }
+  g.name = newName; saveTransitGroups(transitGroups); renderTransit();
+}
+function deleteTransitGroup(id) {
+  transitGroups = transitGroups.filter(g=>g.id!==id); saveTransitGroups(transitGroups);
+  let ch=false; transit.forEach(item=>{if(item.groupId===id){item.groupId=null;ch=true;}});
+  if(ch) saveTransit(transit);
+  if(activeTransitGroup===id) activeTransitGroup=null;
+  renderTransitGroupList(); renderTransit(); toast('已删除分组，相关在途已移至「全部」');
+}
+
+// ════════════════════════════════════════
+//  Transit — Stats
+// ════════════════════════════════════════
+function applyTransitTotalUI(totalVal) {
+  const el  = document.getElementById('transit-stat-total');
+  const eye = document.getElementById('transit-total-eye');
+  if (el)  el.textContent  = showTotal ? ('¥'+fmt(totalVal)) : '¥ ****';
+  if (eye) eye.textContent = showTotal ? '👁' : '🙈';
+}
+function toggleTransitTotal() {
+  showTotal = !showTotal;
+  localStorage.setItem('muke_show_total', String(showTotal));
+  const collTotal    = coll.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
+  const transitTotal = transit.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
+  applyTotalUI(collTotal);
+  applyTransitTotalUI(transitTotal);
+  document.body.classList.toggle('price-hidden', !showTotal);
 }
 
 // ════════════════════════════════════════
@@ -5708,9 +6245,15 @@ function editTransitCurrent() {
   setBrandField(item.brand||''); updateSeriesDL(item.brand||'');
   formTags = [...(item.tags||[])]; renderFormTags();
   _editGroupDirty = false;
+  document.getElementById('f-brand-req').style.display = 'none';
+  document.getElementById('f-merch-type-fg').style.display = 'none';
+  document.getElementById('f-notes').value = item.notes || '';
+  updateTransitGroupSel();
+  document.getElementById('f-group').value = item.groupId || '';
   document.getElementById('f-dex-sync-row').style.display = 'none';
-  document.getElementById('f-group-fg').style.display     = 'none';
+  document.getElementById('f-group-fg').style.display     = '';
   [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
   (item.imageKeys||[]).forEach(async(k,n)=>{
     if(!k) return; const url=await getURL(k); if(url) showSlot(n,url);
   });
@@ -5722,14 +6265,18 @@ function editTransitCurrent() {
 // ════════════════════════════════════════
 async function doMoveCurrentTransitToColl() {
   if (!viewingTransitId) return;
-  document.getElementById('transit-det-ov').classList.remove('on');
-  await moveTransitItemsToColl([viewingTransitId]);
+  safeGuard('确认将此在途条目移入收藏？', async () => {
+    document.getElementById('transit-det-ov').classList.remove('on');
+    await moveTransitItemsToColl([viewingTransitId]);
+  });
 }
 async function batchMoveTransitToColl() {
   const ids = [...selectedTransitIds];
   if (!ids.length) return;
-  await moveTransitItemsToColl(ids);
-  cancelTransitMultiSelect();
+  safeGuard(`确认将 ${ids.length} 件在途条目移入收藏？`, async () => {
+    await moveTransitItemsToColl(ids);
+    cancelTransitMultiSelect();
+  });
 }
 async function moveTransitItemsToColl(ids) {
   if (!ids.length) return;
@@ -5836,6 +6383,570 @@ async function doBatchDeleteTransit() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// MERCH MODULE
+// ══════════════════════════════════════════════════════════════
+
+// ── Merch multiselect ──────────────────────────────────────────
+function toggleMerchMultiSelect() {
+  merchMultiMode = !merchMultiMode;
+  selectedMerchIds.clear();
+  document.getElementById('merch-multisel-btn')?.classList.toggle('active', merchMultiMode);
+  renderMerch();
+  updateMultiBar();
+}
+function cancelMerchMultiSelect() {
+  merchMultiMode = false;
+  selectedMerchIds.clear();
+  document.getElementById('merch-multisel-btn')?.classList.remove('active');
+  renderMerch();
+  updateMultiBar();
+}
+function toggleMerchItemSelect(id) {
+  if (selectedMerchIds.has(id)) selectedMerchIds.delete(id);
+  else selectedMerchIds.add(id);
+  renderMerch();
+  updateMultiBar();
+}
+function merchSelectAll() {
+  const items = merchFilteredSorted();
+  items.forEach(m => selectedMerchIds.add(m.id));
+  renderMerch();
+  updateMultiBar();
+}
+
+// ── Merch group bar ────────────────────────────────────────────
+function renderMerchGroupBar() {
+  const bar = document.getElementById('merch-group-bar');
+  if (!bar) return;
+  if (!appSettings.showGroups) { bar.innerHTML = ''; return; }
+  const total = merch.length;
+  let html = `<div class="g-tab${activeMerchGroup === null ? ' active' : ''}" onclick="setMerchGroup(null)">全部<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${total}</span></div>`;
+  const ungrouped = merch.filter(m => !m.groupId);
+  if (ungrouped.length)
+    html += `<div class="g-tab${activeMerchGroup === '__none__' ? ' active' : ''}" onclick="setMerchGroup('__none__')">未归类<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${ungrouped.length}</span></div>`;
+  for (const g of merchGroups) {
+    const cnt = merch.filter(m => m.groupId === g.id).length;
+    html += `<div class="g-tab${activeMerchGroup === g.id ? ' active' : ''}" onclick="setMerchGroup('${esc(g.id)}')">${esc(g.name)}<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${cnt}</span></div>`;
+  }
+  bar.innerHTML = `<div class="group-tabs">${html}</div>`;
+}
+function setMerchGroup(id) {
+  activeMerchGroup = id;
+  renderMerchGroupBar();
+  renderMerch();
+}
+
+// ── Merch stats ────────────────────────────────────────────────
+let showMerchTotal = (() => { try { return JSON.parse(localStorage.getItem('muke_merch_show_total')); } catch { return false; } })();
+function applyMerchTotalUI() {
+  const countEl = document.getElementById('merch-stat-count');
+  const totalEl = document.getElementById('merch-stat-total');
+  if (countEl) countEl.textContent = merch.length + ' 件';
+  if (totalEl) {
+    if (showMerchTotal) {
+      const sum = merch.reduce((s, m) => s + (parseFloat(m.price) || 0), 0);
+      const s = sum.toFixed(2).replace(/\.?0+$/, '');
+      totalEl.textContent = '¥' + (s || '0');
+    } else {
+      totalEl.textContent = '******';
+    }
+  }
+  // update eye icon
+  const eye = document.getElementById('merch-total-eye');
+  if (eye) eye.title = showMerchTotal ? '点击隐藏金额' : '点击显示金额';
+}
+function toggleMerchTotal() {
+  showMerchTotal = !showMerchTotal;
+  try { localStorage.setItem('muke_merch_show_total', JSON.stringify(showMerchTotal)); } catch {}
+  applyMerchTotalUI();
+}
+
+// ── Merch tag filter ───────────────────────────────────────────
+let activeMerchTag = '';
+function buildMerchTagFilterSel() {
+  const sel = document.getElementById('merch-tag-filter-sel');
+  const row = document.getElementById('merch-tag-filter-row');
+  if (!sel) return;
+  // collect all tags in merch
+  const allTags = new Set();
+  merch.forEach(m => (m.tags||[]).forEach(t => allTags.add(t)));
+  // sort by merch tag bank order
+  const sorted = [...merchTagBank].filter(t => allTags.has(t));
+  allTags.forEach(t => { if (!sorted.includes(t)) sorted.push(t); });
+  sel.innerHTML = '<option value="">全部标签</option>' + sorted.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  sel.value = activeMerchTag;
+  if (row) row.style.display = (appSettings.showTags && sorted.length) ? '' : 'none';
+}
+function onMerchTagFilterChange() {
+  const sel = document.getElementById('merch-tag-filter-sel');
+  activeMerchTag = sel ? sel.value : '';
+  renderMerch();
+}
+function clearMerchTagFilter() {
+  activeMerchTag = '';
+  const sel = document.getElementById('merch-tag-filter-sel');
+  if (sel) sel.value = '';
+  renderMerch();
+}
+
+// ── Merch filter & sort ─────────────────────────────────────────
+function merchFilteredSorted() {
+  let items = [...merch];
+  if (activeMerchGroup === '__none__') items = items.filter(m => !m.groupId);
+  else if (activeMerchGroup !== null)  items = items.filter(m => m.groupId === activeMerchGroup);
+  // search
+  const q = (document.getElementById('merch-q')?.value || '').trim().toLowerCase();
+  if (q) items = items.filter(m => (m.name||'').toLowerCase().includes(q)
+      || (m.type||'').toLowerCase().includes(q)
+      || (m.brand||'').toLowerCase().includes(q)
+      || (m.series||'').toLowerCase().includes(q));
+  // tag filter
+  if (activeMerchTag) items = items.filter(m => (m.tags||[]).includes(activeMerchTag));
+  const sortVal = document.getElementById('merch-sort')?.value || 'manual';
+  if (sortVal === 'default') {
+    items.sort((a,b) =>
+      (a.type||'').localeCompare(b.type||'', 'zh')
+      || (a.name||'').localeCompare(b.name||'', 'zh')
+      || (a.brand||'').localeCompare(b.brand||'', 'zh')
+      || (a.series||'').localeCompare(b.series||'', 'zh')
+    );
+  } else if (sortVal === 'manual') {
+    const order = loadManualOrder(MERCH_ORDER_KEY);
+    if (order && order.length) {
+      const idx = Object.fromEntries(order.map((id,i) => [id,i]));
+      items.sort((a,b) => (idx[a.id]??9999) - (idx[b.id]??9999));
+    }
+  } else if (sortVal === 'newest')    items.sort((a,b) => (b.addedAt||0) - (a.addedAt||0));
+  else if (sortVal === 'oldest')      items.sort((a,b) => (a.addedAt||0) - (b.addedAt||0));
+  else if (sortVal === 'name')        items.sort((a,b) => (a.name||'').localeCompare(b.name||'', 'zh'));
+  else if (sortVal === 'name_desc')   items.sort((a,b) => (b.name||'').localeCompare(a.name||'', 'zh'));
+  else if (sortVal === 'type')        items.sort((a,b) =>
+      (a.type||'').localeCompare(b.type||'', 'zh') || (a.name||'').localeCompare(b.name||'', 'zh'));
+  else if (sortVal === 'brand')       items.sort((a,b) => (a.brand||'').localeCompare(b.brand||'', 'zh'));
+  return items;
+}
+
+// ── Render merch ───────────────────────────────────────────────
+function renderMerch() {
+  renderMerchGroupBar();
+  applyMerchTotalUI();
+  buildMerchTagFilterSel();
+  updateTabBadges();
+  const sortVal = document.getElementById('merch-sort')?.value || 'manual';
+  updateSortResetBtn('merch', sortVal);
+  // selall row
+  const selallRow = document.getElementById('merch-selall-row');
+  if (selallRow) selallRow.style.display = merchMultiMode ? '' : 'none';
+  const grid = document.getElementById('merch-grid');
+  if (!grid) return;
+  const isDraggable = sortVal === 'manual';
+  grid.classList.toggle('multi-sel', merchMultiMode);
+  grid.classList.toggle('sort-manual', isDraggable);
+  const items = merchFilteredSorted();
+  if (!items.length) {
+    const isFiltered = activeMerchGroup !== null || (document.getElementById('merch-q')?.value||'').trim() || activeMerchTag;
+    grid.innerHTML = `<div class="empty">
+      <div class="e-icon">${pokeBallSVG(80)}</div>
+      <h3>${isFiltered ? '没有找到匹配的周边' : '还没有周边记录'}</h3>
+      <p>${isFiltered ? '试试修改搜索条件或切换分组' : '点击右上角「＋ 添加」添加周边商品'}</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(m => {
+    const sel = selectedMerchIds.has(m.id);
+    const grpName = m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
+    const tagHtml = m.tags?.length ? `<div class="c-tags no-tags-hide">${sortTagsByOrder(m.tags).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>` : '';
+    const noteHtml = m.notes ? `<div class="c-note no-notes-hide">${esc(m.notes.substring(0,40))}${m.notes.length>40?'…':''}</div>` : '';
+    const dragAttr = isDraggable
+      ? ` draggable="true" ondragstart="onDragStart(event,'${m.id}','merch')" ondragover="onDragOver(event,'${m.id}','merch')" ondrop="onDrop(event,'${m.id}','merch')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${m.id}','merch')" ontouchmove="onTouchMove(event,'merch')" ontouchend="onTouchEnd(event,'merch')"`
+      : '';
+    const priceStr = m.price ? '¥' + parseFloat(m.price).toFixed(2).replace(/\.?0+$/, '') : '';
+    return `<div class="card${sel?' card-selected':''}" onclick="merchCardClick('${m.id}')" data-card-id="${m.id}"${dragAttr}>
+      <div class="card-sel-badge${sel?' checked':''}">✓</div>
+      <div class="c-img" data-mchid="${m.id}">${pokeBallSVG(60)}</div>
+      <div class="c-body">
+        <div class="c-name">${esc(m.name)}</div>
+        ${m.type ? `<div class="c-sub" style="color:var(--accent);font-size:11px">${esc(m.type)}</div>` : ''}
+        <div class="c-sub">${esc(m.brand||'未填品牌')}${m.series?' · '+esc(m.series):''}</div>
+        ${priceStr ? `<div class="c-sub" style="color:var(--accent);font-weight:600;font-size:12px">${priceStr}</div>` : ''}
+        ${grpName ? `<div class="c-sub no-groups-hide" style="font-size:11px;opacity:.7">${esc(grpName)}</div>` : ''}
+        ${tagHtml}${noteHtml}
+      </div>
+    </div>`;
+  }).join('');
+
+  items.forEach(async m => {
+    const keys = m.imageKeys || [];
+    if (!keys[0]) return;
+    const url = await getURL(keys[0]);
+    if (!url) return;
+    const el = document.querySelector(`.c-img[data-mchid="${m.id}"]`);
+    if (el) el.innerHTML = `<img src="${url}" alt="${esc(m.name)}" loading="lazy">`;
+  });
+}
+
+function merchCardClick(id) {
+  if (merchMultiMode) { toggleMerchItemSelect(id); return; }
+  openMerchDetail(id);
+}
+
+// ── Merch add / edit form ──────────────────────────────────────
+function openMerchAdd() {
+  formCtx = 'merch';
+  editingId = null; curFiles = [null,null,null]; _editGroupDirty = false;
+  document.getElementById('form-title').textContent = '🎁 添加周边';
+  document.getElementById('f-name').value   = '';
+  document.getElementById('f-series').value = '';
+  document.getElementById('f-price').value  = '';
+  document.getElementById('f-qty').value    = '';
+  resetPriceBreakdown();
+  setBrandField(''); updateSeriesDL('');
+  document.getElementById('f-brand-req').style.display = 'none';
+  document.getElementById('f-merch-type').value = '';
+  document.getElementById('f-merch-type-fg').style.display = '';
+  document.getElementById('f-notes').value = '';
+  updateMerchGroupSel();
+  document.getElementById('f-group').value = (activeMerchGroup && activeMerchGroup !== '__none__') ? activeMerchGroup : '';
+  formTags = []; renderFormTags();
+  document.getElementById('f-dex-sync-row').style.display = 'none';
+  document.getElementById('f-group-fg').style.display     = '';
+  [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
+  document.getElementById('form-ov').classList.add('on');
+}
+function updateMerchGroupSel() {
+  document.getElementById('f-group').innerHTML = '<option value="">不分组</option>' +
+    merchGroups.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+}
+function editMerchCurrent() {
+  if (!merchDetId) return;
+  const m = merch.find(x => x.id === merchDetId);
+  if (!m) return;
+  formCtx = 'merch';
+  editingId = m.id; curFiles = [null,null,null]; _editGroupDirty = false;
+  document.getElementById('form-title').textContent = '编辑周边';
+  document.getElementById('f-name').value    = m.name || '';
+  document.getElementById('f-merch-type').value = m.type || '';
+  document.getElementById('f-merch-type-fg').style.display = '';
+  document.getElementById('f-notes').value   = m.notes || '';
+  document.getElementById('f-series').value  = m.series || '';
+  document.getElementById('f-price').value   = m.price || '';
+  document.getElementById('f-qty').value     = m.qty || '';
+  resetPriceBreakdown();
+  setBrandField(m.brand || ''); updateSeriesDL(m.brand || '');
+  document.getElementById('f-brand-req').style.display = 'none';
+  updateMerchGroupSel();
+  document.getElementById('f-group').value   = m.groupId || '';
+  formTags = [...(m.tags||[])]; renderFormTags();
+  document.getElementById('f-dex-sync-row').style.display = 'none';
+  document.getElementById('f-group-fg').style.display     = '';
+  // restore image previews
+  [0,1,2].forEach(resetSlot);
+  syncFormSlotVisibility();
+  (m.imageKeys||[]).forEach(async(k,n)=>{
+    if(!k) return; const url=await getURL(k); if(url) showSlot(n,url);
+  });
+  document.getElementById('merch-det-ov').classList.remove('on');
+  document.getElementById('form-ov').classList.add('on');
+}
+
+// ── Merch detail ───────────────────────────────────────────────
+let merchDetId = null;
+async function openMerchDetail(id) {
+  const m = merch.find(x => x.id === id);
+  if (!m) return;
+  merchDetId = id;
+  // gallery
+  const gallery = document.getElementById('merch-det-gallery');
+  const validKeys = (m.imageKeys||[]).filter(Boolean);
+  const urls = await Promise.all(validKeys.map(k => getURL(k)));
+  const validUrls = urls.filter(Boolean);
+  if (!validUrls.length) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img">${pokeBallSVG(90)}</div>`;
+  } else if (validUrls.length === 1) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img"><img src="${validUrls[0]}" alt=""></div>`;
+  } else {
+    gallery.className = 'det-gallery multi';
+    let html = `<div class="det-main-img" id="merch-det-main-img"><img src="${validUrls[0]}" alt=""></div>`;
+    for (let i = 0; i < validUrls.length; i++) {
+      html += `<div class="det-thumb ${i===0?'active':''}" onclick="switchMerchThumb(${i})"><img src="${validUrls[i]}" alt=""></div>`;
+    }
+    gallery.innerHTML = html;
+  }
+  document.getElementById('merch-det-title').textContent = m.name;
+  // meta
+  const grpName = m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
+  const metaEl = document.getElementById('merch-det-meta');
+  let metaHtml = '';
+  if (m.brand)  metaHtml += `<div class="det-brand">${esc(m.brand)}</div>`;
+  // price display
+  if (m.price) {
+    let priceStr = '¥' + parseFloat(m.price).toFixed(2).replace(/\.?0+$/, '');
+    if (m.priceBreakdown) {
+      const {base=0, ship=0, other=0} = m.priceBreakdown;
+      const parts = [];
+      if (base)  parts.push(`商品 ¥${base}`);
+      if (ship)  parts.push(`运费 ¥${ship}`);
+      if (other) parts.push(`其他 ¥${other}`);
+      if (parts.length) priceStr += ` <span style="font-size:11px;opacity:.7">(${parts.join(' + ')})</span>`;
+    }
+    metaHtml += `<div class="det-brand" style="color:var(--accent)">买入价格：${priceStr}</div>`;
+  }
+  // type / series / group grid
+  if (m.type || m.series || grpName) {
+    metaHtml += `<div class="det-grid" style="grid-template-columns:1fr 1fr">`;
+    if (m.type)   metaHtml += `<div class="det-cell"><div class="det-cl">类型</div><div class="det-cv" style="color:var(--accent)">${esc(m.type)}</div></div>`;
+    if (m.series) metaHtml += `<div class="det-cell"><div class="det-cl">系列</div><div class="det-cv">${esc(m.series)}</div></div>`;
+    if (grpName)  metaHtml += `<div class="det-cell no-groups-hide"><div class="det-cl">分组</div><div class="det-cv">${esc(grpName)}</div></div>`;
+    metaHtml += `</div>`;
+  }
+  metaEl.innerHTML = metaHtml;
+  // tags
+  const tagsSection = document.getElementById('merch-det-tags-section');
+  const tagsRow = document.getElementById('merch-det-tags');
+  if (m.tags && m.tags.length) {
+    tagsRow.innerHTML = (m.tags||[]).map(t => `<span class="card-tag">${esc(t)}</span>`).join('');
+    tagsSection.style.display = '';
+  } else {
+    tagsSection.style.display = 'none';
+  }
+  document.getElementById('merch-det-notes').value = m.notes || '';
+  document.getElementById('merch-det-ov').classList.add('on');
+}
+function switchMerchThumb(idx) {
+  const thumbs = document.querySelectorAll('#merch-det-gallery .det-thumb');
+  const imgs   = document.querySelectorAll('#merch-det-gallery .det-thumb img');
+  thumbs.forEach((el,i) => el.classList.toggle('active', i === idx));
+  const mainImg = document.querySelector('#merch-det-gallery .det-main-img img');
+  if (mainImg && imgs[idx]) mainImg.src = imgs[idx].src;
+}
+function closeMerchDet(e) {
+  if (e && e.target !== document.getElementById('merch-det-ov')) return;
+  document.getElementById('merch-det-ov').classList.remove('on');
+  merchDetId = null;
+}
+function onMerchNotesInput() { /* handled on blur */ }
+function saveMerchNotes() {
+  if (!merchDetId) return;
+  const m = merch.find(x => x.id === merchDetId);
+  if (!m) return;
+  m.notes = document.getElementById('merch-det-notes').value;
+  saveMerch(merch);
+  renderMerch();
+}
+function confirmMerchDel() {
+  if (!merchDetId) return;
+  const m = merch.find(x => x.id === merchDetId);
+  if (!m) return;
+  confMode = 'merch';
+  document.getElementById('conf-icon').textContent  = '🗑';
+  document.getElementById('conf-title').textContent = `删除「${m.name}」？`;
+  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+  document.getElementById('conf-ov').classList.add('on');
+}
+async function doDeleteMerch() {
+  const m = merch.find(x => x.id === merchDetId);
+  if (!m) { closeConf(); return; }
+  for (const key of (m.imageKeys||[]).filter(Boolean)) {
+    if (!isKeyUsedElsewhereFromMerch(key, m.id)) await idbDel(key);
+  }
+  merch = merch.filter(x => x.id !== m.id);
+  saveMerch(merch);
+  updateTabBadges();
+  renderMerch();
+  closeConf();
+  closeMerchDet();
+  toast('已删除');
+}
+
+// ── Merch batch ops ────────────────────────────────────────────
+function batchMerchRemoveFromGroup() {
+  const ids = [...selectedMerchIds];
+  if (!ids.length) return;
+  merch.forEach(m => { if (ids.includes(m.id)) m.groupId = ''; });
+  saveMerch(merch);
+  cancelMerchMultiSelect();
+  toast('已移出分组');
+}
+async function batchConfirmMerchDel() {
+  const n = selectedMerchIds.size;
+  if (!n) return;
+  confMode = 'batchMerch';
+  document.getElementById('conf-icon').textContent  = '🗑';
+  document.getElementById('conf-title').textContent = `删除 ${n} 件周边？`;
+  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+  document.getElementById('conf-ov').classList.add('on');
+}
+async function doBatchDeleteMerch() {
+  const ids = [...selectedMerchIds];
+  const orphanKeys = [];
+  for (const id of ids) {
+    const m = merch.find(x => x.id === id);
+    if (!m) continue;
+    for (const key of (m.imageKeys||[]).filter(Boolean)) {
+      if (!isKeyUsedElsewhereFromMerch(key, id)) orphanKeys.push(key);
+    }
+  }
+  merch = merch.filter(x => !ids.includes(x.id));
+  saveMerch(merch);
+  updateTabBadges();
+  document.getElementById('conf-ov').classList.remove('on');
+  cancelMerchMultiSelect();
+  toast(`🗑 已删除 ${ids.length} 件周边`);
+  for (const k of orphanKeys) {
+    try { await idbDel(k); delete urlCache[k]; } catch(e) {}
+  }
+}
+
+// ── Cross-module batch move/copy ───────────────────────────────
+async function batchCrossModule(fromModule, toModule, mode) {
+  const srcIds = fromModule === 'coll' ? [...selectedIds]
+                : fromModule === 'transit' ? [...selectedTransitIds]
+                : [...selectedMerchIds];
+  if (!srcIds.length) return;
+  if (mode === 'move' && appSettings.safeMode) {
+    const fromLabel = fromModule === 'coll' ? '收藏' : fromModule === 'transit' ? '在途' : '周边';
+    const toLabel   = toModule   === 'coll' ? '收藏' : toModule   === 'transit' ? '在途' : '周边';
+    safeGuard(`将 ${srcIds.length} 件从「${fromLabel}」移动到「${toLabel}」？原模块数据将被删除。`, async () => {
+      await _doBatchCrossModule(fromModule, toModule, mode, srcIds);
+    });
+    return;
+  }
+  await _doBatchCrossModule(fromModule, toModule, mode, srcIds);
+}
+async function _doBatchCrossModule(fromModule, toModule, mode, srcIds) {
+  const srcArr = fromModule === 'coll' ? coll : fromModule === 'transit' ? transit : merch;
+  const dstArr = toModule === 'coll' ? coll : toModule === 'transit' ? transit : merch;
+  const saveFunc = toModule === 'coll' ? saveData : toModule === 'transit' ? saveTransit : saveMerch;
+  const saveSrcFunc = fromModule === 'coll' ? saveData : fromModule === 'transit' ? saveTransit : saveMerch;
+  const prefix = toModule === 'coll' ? 'p_' : toModule === 'transit' ? 't_' : 'm_';
+
+  for (const id of srcIds) {
+    const src = srcArr.find(x => x.id === id);
+    if (!src) continue;
+    const newImageKeys = [];
+    for (const key of (src.imageKeys||[]).filter(Boolean)) {
+      const blob = await idbGet(key);
+      if (blob) {
+        const newKey = prefix + 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        await idbPut(newKey, blob);
+        newImageKeys.push(newKey);
+      }
+    }
+    const newItem = { ...src,
+      id: prefix + Date.now() + '_' + Math.random().toString(36).slice(2,6),
+      imageKeys: newImageKeys,
+      addedAt: Date.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      groupId: ''
+    };
+    dstArr.push(newItem);
+  }
+  saveFunc(dstArr);
+
+  if (mode === 'move') {
+    const srcRemaining = srcArr.filter(x => !srcIds.includes(x.id));
+    for (const id of srcIds) {
+      const src = srcArr.find(x => x.id === id);
+      if (!src) continue;
+      for (const key of (src.imageKeys||[]).filter(Boolean)) {
+        const stillUsed = srcRemaining.some(x => (x.imageKeys||[]).includes(key))
+          || (fromModule !== 'coll'    && coll.some(x    => (x.imageKeys||[]).includes(key)))
+          || dex.some(x    => (x.imageKeys||[]).includes(key))
+          || (fromModule !== 'share'   && share.some(x   => (x.imageKeys||[]).includes(key)))
+          || (fromModule !== 'transit' && transit.some(x => (x.imageKeys||[]).includes(key)))
+          || (fromModule !== 'merch'   && merch.some(x   => (x.imageKeys||[]).includes(key)));
+        if (!stillUsed) { try { await idbDel(key); delete urlCache[key]; } catch(e) {} }
+      }
+    }
+    if (fromModule === 'coll') { coll.length = 0; srcRemaining.forEach(x => coll.push(x)); saveSrcFunc(coll); }
+    else if (fromModule === 'transit') { transit.length = 0; srcRemaining.forEach(x => transit.push(x)); saveSrcFunc(transit); }
+    else { merch.length = 0; srcRemaining.forEach(x => merch.push(x)); saveSrcFunc(merch); }
+  }
+
+  updateTabBadges();
+  if (fromModule === 'coll') cancelMultiSelect();
+  else if (fromModule === 'transit') cancelTransitMultiSelect();
+  else cancelMerchMultiSelect();
+  const label = mode === 'copy' ? '复制' : '移动';
+  const toLabel = toModule === 'coll' ? '收藏' : toModule === 'transit' ? '在途' : '周边';
+  toast(`已${label}到${toLabel} ✓`);
+}
+
+// ── Merch group management ─────────────────────────────────────
+function openMerchGroupMgmt() {
+  renderMerchGroupList();
+  document.getElementById('mgrp-new-name').value = '';
+  document.getElementById('mgrp-ov').classList.add('on');
+}
+function closeMerchGroupMgmt(e) {
+  if (e && e.target !== document.getElementById('mgrp-ov')) return;
+  document.getElementById('mgrp-ov').classList.remove('on');
+}
+function renderMerchGroupList() {
+  const el = document.getElementById('mgrp-list');
+  if (!el) return;
+  if (!merchGroups.length) { el.innerHTML = '<div class="grp-empty">还没有分组，创建一个试试吧 ✨</div>'; return; }
+  const last = merchGroups.length - 1;
+  el.innerHTML = merchGroups.map((g, idx) => {
+    const cnt = merch.filter(m => m.groupId === g.id).length;
+    return `<div class="grp-item">
+      <div class="grp-sort-btns">
+        <button class="btn-grp-mv" onclick="moveMerchGroup(${idx},-1)" ${idx===0?'disabled':''}title="上移">▲</button>
+        <button class="btn-grp-mv" onclick="moveMerchGroup(${idx},1)"  ${idx===last?'disabled':''}title="下移">▼</button>
+      </div>
+      <div class="grp-dot"></div>
+      <input class="grp-item-name" value="${esc(g.name)}"
+        onblur="renameMerchGroup('${g.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <span class="grp-item-count">${cnt} 件</span>
+      <button class="btn-grp-del" onclick="deleteMerchGroup('${esc(g.id)}')">✕</button>
+    </div>`;
+  }).join('');
+}
+function moveMerchGroup(idx, delta) {
+  const newIdx = idx + delta;
+  if (newIdx < 0 || newIdx >= merchGroups.length) return;
+  [merchGroups[idx], merchGroups[newIdx]] = [merchGroups[newIdx], merchGroups[idx]];
+  saveMerchGroups(merchGroups);
+  renderMerchGroupList();
+  renderMerchGroupBar();
+}
+function createMerchGroup() {
+  const inp = document.getElementById('mgrp-new-name');
+  const name = inp.value.trim();
+  if (!name) { toast('⚠️ 请填写分组名称'); return; }
+  if (merchGroups.some(g => g.name === name)) { toast('⚠️ 分组名称已存在'); return; }
+  const id = 'mg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+  merchGroups.push({ id, name, createdAt: Date.now() });
+  saveMerchGroups(merchGroups);
+  inp.value = '';
+  renderMerchGroupList();
+  renderMerchGroupBar();
+  toast('分组已创建');
+}
+function renameMerchGroup(gid, name) {
+  name = (name||'').trim();
+  if (!name) return;
+  const g = merchGroups.find(g => g.id === gid);
+  if (g) { g.name = name; saveMerchGroups(merchGroups); renderMerchGroupBar(); }
+}
+function deleteMerchGroup(id) {
+  merch.forEach(m => { if (m.groupId === id) m.groupId = ''; });
+  saveMerch(merch);
+  merchGroups = merchGroups.filter(g => g.id !== id);
+  saveMerchGroups(merchGroups);
+  if (activeMerchGroup === id) activeMerchGroup = null;
+  renderMerchGroupList();
+  renderMerchGroupBar();
+  renderMerch();
+  toast('分组已删除');
+}
+
 // ════════════════════════════════════════
 //  Manual Sort
 // ════════════════════════════════════════
@@ -5843,6 +6954,7 @@ const COLL_ORDER_KEY    = 'muke_coll_manual_order';
 const DEX_ORDER_KEY     = 'muke_dex_manual_order';
 const SHARE_ORDER_KEY   = 'muke_share_manual_order';
 const TRANSIT_ORDER_KEY = 'muke_transit_manual_order';
+const MERCH_ORDER_KEY   = 'muke_merch_manual_order';
 
 function loadManualOrder(key) {
   try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
@@ -5854,20 +6966,21 @@ function saveManualOrder(key, arr) {
 let pendingManualSection = null;
 
 function onSortChange(section) {
-  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : 'share-sort';
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : section === 'merch' ? 'merch-sort' : 'share-sort';
   const val   = document.getElementById(selId).value;
-  const key   = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const key   = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
   // Show reset button state
   updateSortResetBtn(section, val);
   // Re-render
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
   else if (section === 'transit') renderTransit();
+  else if (section === 'merch')   renderMerch();
   else renderShare();
 }
 
 function updateSortResetBtn(section, val) {
-  const btnId = section === 'coll' ? 'coll-sort-reset' : section === 'dex' ? 'dex-sort-reset' : section === 'transit' ? 'transit-sort-reset' : 'share-sort-reset';
+  const btnId = section === 'coll' ? 'coll-sort-reset' : section === 'dex' ? 'dex-sort-reset' : section === 'transit' ? 'transit-sort-reset' : section === 'merch' ? 'merch-sort-reset' : 'share-sort-reset';
   const btn = document.getElementById(btnId);
   if (btn) btn.style.display = val === 'manual' ? '' : 'none';
 }
@@ -5881,7 +6994,7 @@ function confirmInitManualOrder() {
   document.getElementById('conf-cc-btn').textContent = '再想想';
 
   // Build initial order from current default sort
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
   let items;
   if (section === 'coll') {
     items = [...coll]; items.sort(collSortComparator('default'));
@@ -5889,25 +7002,28 @@ function confirmInitManualOrder() {
     items = [...dex];  items.sort(dexSortComparator('default'));
   } else if (section === 'transit') {
     items = [...transit]; items.sort(collSortComparator('default'));
+  } else if (section === 'merch') {
+    items = [...merch]; items.sort((a,b) => b.addedAt - a.addedAt);
   } else {
     items = [...share]; items.sort(dexSortComparator('default'));
   }
   saveManualOrder(key, items.map(i => i.id));
 
   // Switch the sort dropdown to manual
-  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : 'share-sort';
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : section === 'merch' ? 'merch-sort' : 'share-sort';
   document.getElementById(selId).value = 'manual';
   updateSortResetBtn(section, 'manual');
 
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
   else if (section === 'transit') renderTransit();
+  else if (section === 'merch') renderMerch();
   else renderShare();
   toast('✅ 手动排序已创建，拖动卡片调整顺序');
 }
 
 function resetManualOrder(section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
   let items;
   if (section === 'coll') {
     items = [...coll]; items.sort(collSortComparator('default'));
@@ -5915,6 +7031,8 @@ function resetManualOrder(section) {
     items = [...dex];  items.sort(dexSortComparator('default'));
   } else if (section === 'transit') {
     items = [...transit]; items.sort(collSortComparator('default'));
+  } else if (section === 'merch') {
+    items = [...merch]; items.sort((a,b) => b.addedAt - a.addedAt);
   } else {
     items = [...share]; items.sort(dexSortComparator('default'));
   }
@@ -5922,6 +7040,7 @@ function resetManualOrder(section) {
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
   else if (section === 'transit') renderTransit();
+  else if (section === 'merch') renderMerch();
   else renderShare();
   toast('↺ 已按默认顺序重置');
 }
@@ -5930,7 +7049,7 @@ function resetManualOrder(section) {
 let dragSrcId = null, dragSrcSection = null;
 
 function onDragStart(e, id, section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
   if (!loadManualOrder(key)) {
     e.preventDefault();
     pendingManualSection = section;
@@ -5977,7 +7096,7 @@ function onDragEnd(e) {
 let touchDragId = null, touchDragSection = null, touchGhost = null, touchOrigCard = null;
 
 function onTouchStart(e, id, section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
   if (!loadManualOrder(key)) {
     // Show confirmation on first touch
     pendingManualSection = section;
@@ -6042,8 +7161,8 @@ function onTouchEnd(e, section) {
 }
 
 function doReorderManual(section, srcId, targetId, insertBefore) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
-  const arr = section === 'coll' ? coll : section === 'dex' ? dex : section === 'transit' ? transit : share;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : section === 'merch' ? MERCH_ORDER_KEY : SHARE_ORDER_KEY;
+  const arr = section === 'coll' ? coll : section === 'dex' ? dex : section === 'transit' ? transit : section === 'merch' ? merch : share;
   let order = loadManualOrder(key) || arr.map(i => i.id);
   // Remove src then insert near target
   order = order.filter(id => id !== srcId);
@@ -6057,6 +7176,7 @@ function doReorderManual(section, srcId, targetId, insertBefore) {
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
   else if (section === 'transit') renderTransit();
+  else if (section === 'merch') renderMerch();
   else renderShare();
 }
 
