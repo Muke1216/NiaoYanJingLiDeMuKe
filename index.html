@@ -65,6 +65,14 @@ header{background:linear-gradient(130deg,#141430 0%,#1e1e50 60%,#252570 100%);
 .tab-badge{font-size:11px;font-weight:700;background:var(--border);color:var(--muted);
   border-radius:9px;padding:1px 7px;line-height:1.5;}
 .main-tab.active .tab-badge{background:rgba(46,184,184,.18);color:var(--teal2);}
+/* ── 在途 Tab（琥珀色） ── */
+.main-tab[data-tab="transit"].active{color:#d97706;border-bottom-color:#d97706;}
+.main-tab[data-tab="transit"].active .tab-badge{background:rgba(217,119,6,.15);color:#d97706;}
+/* ── Transit det actions ── */
+.btn-transit-to-coll{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;
+  border:none;border-radius:11px;padding:10px 0;font-size:13px;font-weight:700;
+  cursor:pointer;flex:1.5;transition:.2s;}
+.btn-transit-to-coll:hover{opacity:.88;transform:translateY(-1px);}
 
 /* ── Stats ── */
 .stats-bar{background:#fff;border-bottom:1px solid var(--border);}
@@ -551,6 +559,13 @@ body:not(.feat-qty) .c-qty-badge{display:none!important;}
 
 /* ── Batch Tag Modal ── */
 .batch-tag-modal{max-width:380px;}
+/* mode tabs */
+.batch-tag-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.batch-tag-tab{flex:1;padding:7px 0;border:1.5px solid var(--border);border-radius:9px;
+  font-size:13px;font-weight:700;cursor:pointer;background:#fff;color:var(--muted);transition:.15s;}
+.batch-tag-tab.tab-add-active{border-color:var(--teal);color:var(--teal2);background:rgba(46,184,184,.1);}
+.batch-tag-tab.tab-del-active{border-color:#f87171;color:#ef4444;background:rgba(248,113,113,.1);}
+/* chips */
 .batch-tag-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px;min-height:36px;}
 .batch-tag-opt{display:inline-flex;align-items:center;padding:6px 13px;
   border:1.5px solid var(--border);border-radius:20px;font-size:13px;
@@ -559,13 +574,17 @@ body:not(.feat-qty) .c-qty-badge{display:none!important;}
 .batch-tag-opt:hover{border-color:var(--teal);color:var(--teal2);background:rgba(46,184,184,.06);}
 .batch-tag-opt.sel{background:rgba(46,184,184,.15);border-color:var(--teal);color:var(--teal2);}
 .batch-tag-opt.sel::before{content:'✓ ';}
+.batch-tag-opt.sel-del{background:rgba(248,113,113,.15);border-color:#f87171;color:#ef4444;}
+.batch-tag-opt.sel-del::before{content:'✕ ';}
+.batch-tag-opt.del-mode:hover{border-color:#f87171;color:#ef4444;background:rgba(248,113,113,.06);}
 .batch-tag-new-row{display:flex;gap:8px;margin-bottom:10px;}
 .batch-tag-status{font-size:12px;color:var(--muted);margin-bottom:10px;min-height:18px;}
 .btn-batch-tag-apply{width:100%;padding:11px;border:none;border-radius:11px;font-size:13px;
   font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--teal),var(--teal2));
   color:#fff;box-shadow:0 4px 12px rgba(46,184,184,.3);transition:.2s;}
+.btn-batch-tag-apply.del-btn{background:linear-gradient(135deg,#f87171,#ef4444);box-shadow:0 4px 12px rgba(239,68,68,.3);}
 .btn-batch-tag-apply:hover{transform:translateY(-1px);}
-.btn-batch-tag-apply:disabled{opacity:.45;transform:none;cursor:default;}
+.btn-batch-tag-apply:disabled{opacity:.45;transform:none;cursor:default;background:linear-gradient(135deg,var(--teal),var(--teal2));box-shadow:none;}
 
 /* ── Tag Filter Row ── */
 .tag-filter-row{padding:5px 16px 9px;display:flex;align-items:center;gap:8px;
@@ -764,6 +783,9 @@ body.no-notes .det-notes-section{display:none!important;}
 <!-- ── Main Tab Bar ── -->
 <div class="main-tabs-bar">
   <div class="main-tabs">
+    <button class="main-tab" data-tab="transit" id="transit-tab" style="display:none" onclick="setTab('transit')">
+      📦 在途 <span class="tab-badge" id="transit-badge">0</span>
+    </button>
     <button class="main-tab active" data-tab="collection" onclick="setTab('collection')">
       收藏 <span class="tab-badge" id="coll-badge">0</span>
     </button>
@@ -953,6 +975,51 @@ body.no-notes .det-notes-section{display:none!important;}
 </div><!-- /#share-section -->
 
 <!-- ══════════════════════════════════════
+     TRANSIT SECTION
+════════════════════════════════════════ -->
+<div id="transit-section" style="display:none">
+
+  <!-- info bar -->
+  <div class="dex-info-bar">
+    <div class="dex-info-inner" id="transit-count-label">在途共 0 件</div>
+  </div>
+
+  <!-- toolbar -->
+  <div class="toolbar-wrap">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-ic">🔍</span>
+        <input type="text" id="transit-q" placeholder="搜索在途…" oninput="renderTransit()">
+      </div>
+      <select class="sort-sel" id="transit-sort" onchange="onSortChange('transit')">
+        <option value="default">默认排序</option>
+        <option value="name">按名称</option>
+        <option value="brand">按品牌</option>
+        <option value="series">按系列</option>
+        <option value="price_desc">价格从高到低</option>
+        <option value="price_asc">价格从低到高</option>
+        <option value="manual">手动排序</option>
+      </select>
+      <button class="btn-sort-reset" id="transit-sort-reset" style="display:none" onclick="resetManualOrder('transit')">↺ 重置</button>
+      <button class="btn-multisel" id="transit-multisel-btn" onclick="toggleTransitMultiSelect()">☑ 多选</button>
+    </div>
+    <div class="multisel-selall" id="transit-selall-row" style="display:none">
+      <button class="multisel-selall-btn" id="transit-selall-btn" onclick="transitSelectAll()">全选</button>
+      <span style="font-size:12px;color:var(--muted)" id="transit-selall-hint">点击卡片选择</span>
+    </div>
+    <div class="share-toolbar-acts">
+      <button class="btn-share-act btn-share-add" onclick="openTransitAdd()">＋ 在途入库</button>
+    </div>
+  </div>
+
+  <!-- grid -->
+  <div class="grid-wrap">
+    <div class="grid" id="transit-grid"></div>
+  </div>
+
+</div><!-- /#transit-section -->
+
+<!-- ══════════════════════════════════════
      MODALS
 ════════════════════════════════════════ -->
 
@@ -1055,7 +1122,7 @@ body.no-notes .det-notes-section{display:none!important;}
       </div>
       <div class="fg" id="f-group-fg">
         <label class="fl">分组</label>
-        <select class="fsel" id="f-group">
+        <select class="fsel" id="f-group" onchange="_editGroupDirty=true">
           <option value="">不分组</option>
         </select>
       </div>
@@ -1133,6 +1200,42 @@ body.no-notes .det-notes-section{display:none!important;}
       <div class="det-actions">
         <button class="btn-del" onclick="confirmDel()">🗑 删除</button>
         <button class="btn-edit" onclick="editCurrent()">✏️ 编辑</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Transit Detail Modal ── -->
+<div class="overlay" id="transit-det-ov" onclick="closeTransitDet(event)">
+  <div class="modal" style="max-width:540px">
+    <div class="m-head">
+      <div class="m-title">📦 在途详情</div>
+      <button class="m-close" onclick="closeTransitDet()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="det-gallery" id="transit-det-gallery"></div>
+      <div class="det-name" id="transit-det-name"></div>
+      <div class="det-brand" id="transit-det-brand"></div>
+      <div class="det-grid">
+        <div class="det-cell"><div class="det-cl">买入价格</div><div class="det-cv price" id="transit-det-price"></div></div>
+        <div class="det-cell"><div class="det-cl">系列</div><div class="det-cv" id="transit-det-series"></div></div>
+        <div class="det-cell" id="transit-det-qty-cell" style="display:none">
+          <div class="det-cl">持有数量</div><div class="det-cv det-qty-val" id="transit-det-qty"></div>
+        </div>
+      </div>
+      <div class="det-tags-section" id="transit-det-tags-section" style="display:none">
+        <div class="det-tags-row" id="transit-det-tags-row"></div>
+      </div>
+      <div class="det-notes-section">
+        <div class="det-notes-lbl">备注</div>
+        <textarea class="det-notes-ta" id="transit-det-notes-ta" placeholder="在这里添加备注…"
+          oninput="onTransitNotesInput()" onblur="saveTransitNotes()"></textarea>
+        <div class="det-notes-hint" id="transit-det-notes-hint">修改后失去焦点自动保存</div>
+      </div>
+      <div class="det-actions">
+        <button class="btn-del" onclick="confirmTransitDel()">🗑 删除</button>
+        <button class="btn-edit" onclick="editTransitCurrent()">✏️ 编辑</button>
+        <button class="btn-transit-to-coll" onclick="doMoveCurrentTransitToColl()">📬 移入收藏</button>
       </div>
     </div>
   </div>
@@ -1344,6 +1447,16 @@ body.no-notes .det-notes-section{display:none!important;}
             <span class="toggle-track"></span>
           </label>
         </div>
+        <div class="sett-item">
+          <div class="sett-item-info">
+            <div class="sett-item-name">在途模块</div>
+            <div class="sett-item-desc">记录已购买、运输中的藏品，到货后一键移入收藏并同步图鉴</div>
+          </div>
+          <label class="toggle-sw" for="sett-transit">
+            <input type="checkbox" id="sett-transit" onchange="onSettingChange('showTransit',this.checked)">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -1364,6 +1477,7 @@ body.no-notes .det-notes-section{display:none!important;}
           <div class="backup-sec-title">📤 导出备份</div>
           <div class="backup-sec-desc">选择要导出的范围，可按分组单独导出。</div>
           <div class="bsp-row">
+            <label id="exp-transit-label" style="display:none"><input type="checkbox" id="exp-cb-transit" checked><span>在途</span></label>
             <label><input type="checkbox" id="exp-cb-coll"  checked onchange="updateExpGrpFilters()"><span>收藏</span></label>
             <label><input type="checkbox" id="exp-cb-dex"   checked onchange="updateExpGrpFilters()"><span>图鉴</span></label>
             <label><input type="checkbox" id="exp-cb-share" checked onchange="updateExpGrpFilters()"><span>分享</span></label>
@@ -1486,15 +1600,19 @@ body.no-notes .det-notes-section{display:none!important;}
 <div class="overlay" id="batch-tag-ov" onclick="closeBatchTagPicker(event)">
   <div class="modal batch-tag-modal">
     <div class="m-head">
-      <div class="m-title">🏷 批量添加标签</div>
+      <div class="m-title">🏷 批量标签</div>
       <button class="m-close" onclick="closeBatchTagPicker()">✕</button>
     </div>
     <div class="m-body">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
+      <div class="batch-tag-tabs">
+        <button class="batch-tag-tab tab-add-active" id="btab-add" onclick="setBatchTagMode('add')">＋ 添加</button>
+        <button class="batch-tag-tab" id="btab-del" onclick="setBatchTagMode('del')">－ 删除</button>
+      </div>
+      <div id="batch-tag-desc" style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.6">
         选择要加到已选毛绒的标签（可多选，不超出每件5个上限）
       </div>
       <div class="batch-tag-chips" id="batch-tag-chips"></div>
-      <div class="batch-tag-new-row">
+      <div class="batch-tag-new-row" id="batch-tag-new-row">
         <input class="fi" id="batch-tag-new-inp" placeholder="输入新标签…" maxlength="12"
           onkeydown="if(event.key==='Enter'){event.preventDefault();addNewBatchTag();}">
         <button class="btn-grp-add" onclick="addNewBatchTag()">＋</button>
@@ -1746,7 +1864,7 @@ async function getURL(key) {
 //  App Settings
 // ════════════════════════════════════════
 const SETT_KEY = 'muke_settings_v1';
-const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showItemCount: false, showQty: false };
+const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showItemCount: false, showQty: false, showTransit: false };
 let appSettings = { ...SETT_DEFAULTS };
 (function loadSettings() {
   try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETT_KEY) || '{}')); } catch {}
@@ -1757,7 +1875,7 @@ function saveSettings() {
 }
 
 function applySettings() {
-  const { showGroups, showTags, showNotes, showItemCount, showQty } = appSettings;
+  const { showGroups, showTags, showNotes, showItemCount, showQty, showTransit } = appSettings;
   document.body.classList.toggle('no-groups',    !showGroups);
   document.body.classList.toggle('no-tags',      !showTags);
   document.body.classList.toggle('no-notes',     !showNotes);
@@ -1765,15 +1883,21 @@ function applySettings() {
   document.body.classList.toggle('feat-qty',     showQty);
   // 关闭分组时重置当前分组过滤
   if (!showGroups && activeGroup !== null) { activeGroup = null; }
+  // 在途 tab 显隐
+  const transitTab = document.getElementById('transit-tab');
+  if (transitTab) transitTab.style.display = showTransit ? '' : 'none';
+  // 若在途被关闭且当前正在该 tab，切回收藏
+  if (!showTransit && activeTab === 'transit') setTab('collection');
 }
 
 function openSettings() {
   // 同步 checkbox 状态
-  document.getElementById('sett-groups').checked = appSettings.showGroups;
-  document.getElementById('sett-tags').checked   = appSettings.showTags;
-  document.getElementById('sett-notes').checked  = appSettings.showNotes;
-  document.getElementById('sett-count').checked  = appSettings.showItemCount;
-  document.getElementById('sett-qty').checked    = appSettings.showQty;
+  document.getElementById('sett-groups').checked  = appSettings.showGroups;
+  document.getElementById('sett-tags').checked    = appSettings.showTags;
+  document.getElementById('sett-notes').checked   = appSettings.showNotes;
+  document.getElementById('sett-count').checked   = appSettings.showItemCount;
+  document.getElementById('sett-qty').checked     = appSettings.showQty;
+  document.getElementById('sett-transit').checked = appSettings.showTransit;
   document.getElementById('settings-ov').classList.add('on');
 }
 function closeSettings(e) {
@@ -1801,253 +1925,260 @@ function brandSortKey(b) {
   const i = BRANDS.indexOf(b);
   return i >= 0 ? ('0' + i) : ('1' + (b||'').toLowerCase());
 }
-// Sort key for series: trailing number → zero-padded for numeric sort; otherwise plain string
+// Sort key for series: zero-pad any numeric segment for correct numeric ordering.
+// Handles both leading numbers ("06doll" → "00000006doll")
+// and trailing numbers ("doll1" → "doll00000001").
 function seriesSortKey(s) {
   if (!s) return '￿￿';
-  const m = s.match(/^([\s\S]*?)(\d+)\s*$/);
-  if (m) return m[1] + String(parseInt(m[2])).padStart(8, '0');
+  // Leading number: "06doll", "16静眼别凯", "07大doll" etc.
+  const lead = s.match(/^(\d+)([\s\S]*)$/);
+  if (lead) return String(parseInt(lead[1])).padStart(8, '0') + lead[2];
+  // Trailing number: "doll1", "系列2" etc.
+  const trail = s.match(/^([\s\S]*?)(\d+)\s*$/);
+  if (trail) return trail[1] + String(parseInt(trail[2])).padStart(8, '0');
   return s;
 }
 
 // ─── Multi-key sort comparator builders ────────────────────────────────────
-// Default chain: 名称(图鉴号) → 品牌 → 系列 → 金额从高到低
+// Default chain: 图鉴号 → 品牌 → 系列 → 标签（按管理标签顺序，逐个比较）→ 价格降序
 // When a key is selected it moves to the front; the rest stay in default order.
 function collSortComparator(key) {
-  const cmpName   = (a,b) => { const na=a.pokedexNo||99999,nb=b.pokedexNo||99999; return na!==nb ? na-nb : a.name.localeCompare(b.name,'zh'); };
+  // 实时查图鉴号：名称反查 POKEDEX，查不到则用存储值，兜底 99999
+  const getDexNo = item => lookupDexNo(item.name) ?? item.pokedexNo ?? 99999;
+  const cmpDexNo  = (a,b) => { const na=getDexNo(a),nb=getDexNo(b); return na!==nb ? na-nb : a.name.localeCompare(b.name,'zh'); };
+  const cmpName   = (a,b) => a.name.localeCompare(b.name,'zh-CN');
   const cmpBrand  = (a,b) => { const bk=brandSortKey(a.brand).localeCompare(brandSortKey(b.brand)); return bk||(a.brand||'').localeCompare(b.brand||'','zh'); };
   const cmpSeries = (a,b) => seriesSortKey(a.series).localeCompare(seriesSortKey(b.series),'zh-CN');
+  // 按标签排序：先比第一个标签在 tagBank 中的位置，相同再比第二个，以此类推
+  // 该位置无标签的一方排在后面
+  const cmpTags = (a, b) => {
+    const ta = sortTagsByOrder(a.tags || []);
+    const tb = sortTagsByOrder(b.tags || []);
+    const len = Math.max(ta.length, tb.length);
+    for (let i = 0; i < len; i++) {
+      const aTag = ta[i], bTag = tb[i];
+      if (aTag === bTag) continue;
+      if (aTag === undefined) return 1;   // a 此位置无标签，排后
+      if (bTag === undefined) return -1;  // b 此位置无标签，排后
+      const ao = tagBank.indexOf(aTag); const bo = tagBank.indexOf(bTag);
+      const ar = ao === -1 ? 99999 : ao;  const br = bo === -1 ? 99999 : bo;
+      if (ar !== br) return ar - br;
+    }
+    return 0;
+  };
   const cmpPDsc   = (a,b) => (parseFloat(b.price)||0)-(parseFloat(a.price)||0);
   const cmpPAsc   = (a,b) => (parseFloat(a.price)||0)-(parseFloat(b.price)||0);
   const mkChain   = (primary, rest) => (a,b) => { let r=primary(a,b); if(r) return r; for(const c of rest){r=c(a,b);if(r)return r;} return 0; };
-  if (key==='name')       return mkChain(cmpName,   [cmpBrand,  cmpSeries, cmpPDsc]);
-  if (key==='brand')      return mkChain(cmpBrand,  [cmpName,   cmpSeries, cmpPDsc]);
-  if (key==='series')     return mkChain(cmpSeries, [cmpName,   cmpBrand,  cmpPDsc]);
-  if (key==='price_desc') return mkChain(cmpPDsc,   [cmpName,   cmpBrand,  cmpSeries]);
-  if (key==='price_asc')  return mkChain(cmpPAsc,   [cmpName,   cmpBrand,  cmpSeries]);
-  // default
-  return mkChain(cmpName, [cmpBrand, cmpSeries, cmpPDsc]);
+  if (key==='name')       return mkChain(cmpName,   [cmpBrand,  cmpSeries, cmpTags, cmpPDsc]);
+  if (key==='brand')      return mkChain(cmpBrand,  [cmpDexNo,  cmpSeries, cmpTags, cmpPDsc]);
+  if (key==='series')     return mkChain(cmpSeries, [cmpDexNo,  cmpBrand,  cmpTags, cmpPDsc]);
+  if (key==='price_desc') return mkChain(cmpPDsc,   [cmpDexNo,  cmpBrand,  cmpSeries, cmpTags]);
+  if (key==='price_asc')  return mkChain(cmpPAsc,   [cmpDexNo,  cmpBrand,  cmpSeries, cmpTags]);
+  // default：图鉴号升序 → 品牌 → 系列 → 标签 → 价格降序
+  return mkChain(cmpDexNo, [cmpBrand, cmpSeries, cmpTags, cmpPDsc]);
 }
 
 function dexSortComparator(key) {
-  const cmpName   = (a,b) => { const na=a.pokedexNo||99999,nb=b.pokedexNo||99999; return na!==nb ? na-nb : a.name.localeCompare(b.name,'zh'); };
+  const getDexNo = item => lookupDexNo(item.name) ?? item.pokedexNo ?? 99999;
+  const cmpDexNo  = (a,b) => { const na=getDexNo(a),nb=getDexNo(b); return na!==nb ? na-nb : a.name.localeCompare(b.name,'zh'); };
+  const cmpName   = (a,b) => a.name.localeCompare(b.name,'zh-CN');
   const cmpBrand  = (a,b) => { const bk=brandSortKey(a.brand).localeCompare(brandSortKey(b.brand)); return bk||(a.brand||'').localeCompare(b.brand||'','zh'); };
   const cmpSeries = (a,b) => seriesSortKey(a.series).localeCompare(seriesSortKey(b.series),'zh-CN');
   const mkChain   = (primary, rest) => (a,b) => { let r=primary(a,b); if(r) return r; for(const c of rest){r=c(a,b);if(r)return r;} return 0; };
   if (key==='name')   return mkChain(cmpName,   [cmpBrand,  cmpSeries]);
-  if (key==='brand')  return mkChain(cmpBrand,  [cmpName,   cmpSeries]);
-  if (key==='series') return mkChain(cmpSeries, [cmpName,   cmpBrand]);
-  // default
-  return mkChain(cmpName, [cmpBrand, cmpSeries]);
+  if (key==='brand')  return mkChain(cmpBrand,  [cmpDexNo,  cmpSeries]);
+  if (key==='series') return mkChain(cmpSeries, [cmpDexNo,  cmpBrand]);
+  // default：图鉴号升序
+  return mkChain(cmpDexNo, [cmpBrand, cmpSeries]);
 }
 
 // ─── Official Pokédex (Chinese names) ──────────────────────────────────────
 const POKEDEX = [
+// ── 第一世代 ──
 [1,"妙蛙种子"],[2,"妙蛙草"],[3,"妙蛙花"],[4,"小火龙"],[5,"火恐龙"],[6,"喷火龙"],
-[7,"杰尼龟"],[8,"卡咪龟"],[9,"水箭龟"],[10,"毛毛虫"],[11,"铁甲蛹"],[12,"巴大蝶"],
+[7,"杰尼龟"],[8,"卡咪龟"],[9,"水箭龟"],[10,"绿毛虫"],[11,"铁甲蛹"],[12,"巴大蝶"],
 [13,"独角虫"],[14,"铁壳蛹"],[15,"大针蜂"],[16,"波波"],[17,"比比鸟"],[18,"大比鸟"],
 [19,"小拉达"],[20,"拉达"],[21,"烈雀"],[22,"大嘴雀"],[23,"阿柏蛇"],[24,"阿柏怪"],
 [25,"皮卡丘"],[26,"雷丘"],[27,"穿山鼠"],[28,"穿山王"],[29,"尼多兰"],[30,"尼多娜"],
 [31,"尼多后"],[32,"尼多朗"],[33,"尼多力诺"],[34,"尼多王"],[35,"皮皮"],[36,"皮可西"],
 [37,"六尾"],[38,"九尾"],[39,"胖丁"],[40,"胖可丁"],[41,"超音蝠"],[42,"大嘴蝠"],
-[43,"走路草"],[44,"臭臭花"],[45,"霸王花"],[46,"草食武士"],[47,"草食武者"],[48,"毒毒蛾"],
-[49,"毒粉蛾"],[50,"地鼠"],[51,"三地鼠"],[52,"喵喵"],[53,"猫老大"],[54,"可达鸭"],
-[55,"哥达鸭"],[56,"猴怪"],[57,"火爆猴"],[58,"卡蒂狗"],[59,"风速狗"],[60,"蚊香蛙"],
-[61,"蚊香青蛙"],[62,"蚊香泳士"],[63,"凯西"],[64,"勇基拉"],[65,"胡地"],[66,"腕力"],
-[67,"豪力"],[68,"怪力"],[69,"喇叭芽"],[70,"口嘴花"],[71,"大食花"],[72,"海刺龙"],
-[73,"毒刺水母"],[74,"小拳石"],[75,"隆隆石"],[76,"隆隆岩"],[77,"小火马"],[78,"火焰马"],
+[43,"走路草"],[44,"臭臭花"],[45,"霸王花"],[46,"派拉斯"],[47,"派拉斯特"],[48,"毛球"],
+[49,"摩鲁蛾"],[50,"地鼠"],[51,"三地鼠"],[52,"喵喵"],[53,"猫老大"],[54,"可达鸭"],
+[55,"哥达鸭"],[56,"猴怪"],[57,"火暴猴"],[58,"卡蒂狗"],[59,"风速狗"],[60,"蚊香蝌蚪"],
+[61,"蚊香君"],[62,"蚊香泳士"],[63,"凯西"],[64,"勇基拉"],[65,"胡地"],[66,"腕力"],
+[67,"豪力"],[68,"怪力"],[69,"喇叭芽"],[70,"口呆花"],[71,"大食花"],[72,"玛瑙水母"],
+[73,"毒刺水母"],[74,"小拳石"],[75,"隆隆石"],[76,"隆隆岩"],[77,"小火马"],[78,"烈焰马"],
 [79,"呆呆兽"],[80,"呆壳兽"],[81,"小磁怪"],[82,"三合一磁怪"],[83,"大葱鸭"],[84,"嘟嘟"],
-[85,"嘟嘟利"],[86,"小海豹"],[87,"白海狮"],[88,"臭泥"],[89,"臭臭泥"],[90,"壳壳鱼"],
-[91,"刺壳鱼"],[92,"鬼斯"],[93,"鬼斯通"],[94,"耿鬼"],[95,"大岩蛇"],[96,"瞌睡鸭"],
-[97,"梦食獏"],[98,"大钳蟹"],[99,"巨钳蟹"],[100,"霹雳电球"],[101,"顽皮雷弹"],
-[102,"椰蛋树"],[103,"椰椰蛋树"],[104,"卡拉卡拉"],[105,"嘎啦嘎啦"],[106,"飞腿郎"],
-[107,"快拳郎"],[108,"大舌头"],[109,"瓦斯弹"],[110,"双弹瓦斯"],[111,"独角犀牛"],
-[112,"大犀牛"],[113,"吉利蛋"],[114,"蔓藤怪"],[115,"袋兽"],[116,"墨海马"],
-[117,"刺海马"],[118,"角金鱼"],[119,"金鱼王"],[120,"海星星"],[121,"超级小海星"],
-[122,"魔墙人偶"],[123,"飞天螳螂"],[124,"迷唇姐"],[125,"电击兽"],[126,"鸭嘴火龙"],
-[127,"凤王"],[128,"肯泰罗"],[129,"鲤鱼王"],[130,"暴鲤龙"],[131,"乘龙"],[132,"百变怪"],
-[133,"伊布"],[134,"水伊布"],[135,"闪电伊布"],[136,"火伊布"],[137,"多边兽"],
-[138,"菊石兽"],[139,"多刺菊石兽"],[140,"化石盔甲"],[141,"镰刀盔甲"],[142,"化石翼龙"],
-[143,"卡比兽"],[144,"急冻鸟"],[145,"闪电鸟"],[146,"火焰鸟"],[147,"迷你龙"],
-[148,"哈克龙"],[149,"快龙"],[150,"超梦"],[151,"梦幻"],
-[152,"菊草叶"],[153,"月桂叶"],[154,"大竺葵"],[155,"火球鼠"],[156,"火岩鼠"],[157,"炎帝"],
-[158,"小锯鳄"],[159,"蓝鳄"],[160,"大力鳄"],[161,"芝咪"],[162,"大尾立"],[163,"咕咕"],
-[164,"猫头夜鹰"],[165,"连接虫"],[166,"飞天蜈蚣"],[167,"圆丝蛛"],[168,"阿利多斯"],
-[169,"克罗蝠"],[170,"灯笼鱼"],[171,"电灯怪"],[172,"皮丘"],[173,"皮宝宝"],[174,"宝贝丁"],
-[175,"波克比"],[176,"波克基古"],[177,"天然雀"],[178,"占卜鸟"],[179,"啪嚓咩"],
-[180,"啪嚓电羊"],[181,"电龙"],[182,"草漩涡菊"],[183,"马力龙"],[184,"大力马力龙"],
-[185,"树才怪"],[186,"蚊香蟾蜍"],[187,"棉棉糖"],[188,"跳跳草"],[189,"胡说怪"],
-[190,"长尾怪手"],[191,"向日种子"],[192,"向日花怪"],[193,"乌波"],[194,"沼翁"],
-[195,"水跃兽"],[196,"太阳伊布"],[197,"月亮伊布"],[198,"黑暗鸦"],[199,"呆呆王"],
-[200,"梦妖"],[201,"未知图腾"],[202,"吉利扶"],[203,"长颈龙"],[204,"球球虫"],
-[205,"铠甲蛹"],[206,"土龙"],[207,"天蝎"],[208,"钢铠龙"],[209,"布鲁"],[210,"布鲁皇"],
-[211,"刺刺鱼"],[212,"巨钳螳螂"],[213,"壶壶"],[214,"赫拉克罗斯"],[215,"黄昏熊猫"],
-[216,"熊宝宝"],[217,"大熊怪"],[218,"熔岩蜗牛"],[219,"大熔怪"],[220,"小山猪"],
-[221,"冰山猪"],[222,"珊瑚龙"],[223,"章鱼桶"],[224,"大章鱼"],[225,"信使鸟"],
-[226,"巨翅飞鱼"],[227,"盔甲鸟"],[228,"火狐"],[229,"黑暗火焰犬"],[230,"千针鱼"],
-[231,"小象"],[232,"大象"],[233,"多边兽Ⅱ"],[234,"长角鹿"],[235,"水火纹章"],
-[236,"可拉可拉"],[237,"空手道王"],[238,"迷唇娃"],[239,"电击魔"],[240,"鸭嘴炎兽"],
-[241,"大奶罐"],[242,"幸福蛋"],[243,"雷公"],[244,"恩帝"],[245,"水君"],
-[246,"幼基拉斯"],[247,"沙基拉斯"],[248,"班基拉斯"],[249,"路基欧"],[250,"凤王Ho-Oh"],
-[251,"时拉比"],
-[252,"木守宫"],[253,"森林蜥蜴"],[254,"蜥蜴王"],[255,"火稚鸡"],[256,"战斗鸡"],[257,"疾走鸡"],
-[258,"泥跃鱼"],[259,"沼跃鱼"],[260,"沼王"],[261,"土狼犬"],[262,"黑暗狼犬"],
-[263,"之力路"],[264,"之力"],[265,"刺刺毛虫"],[266,"美蝶蛹"],[267,"美丽蝶"],
-[268,"毒蛹"],[269,"毒粉蝶"],[270,"莲叶童子"],[271,"莲叶少年"],[272,"莲叶大王"],
-[273,"芽草狐"],[274,"利爪草狐"],[275,"草手棍"],[276,"泳圈鸥"],[277,"高空鸥"],
-[278,"浪浪"],[279,"叩头鸥"],[280,"拉鲁拉斯幼"],[281,"拉鲁拉斯中"],[282,"拉鲁拉斯"],
-[283,"水轮虫"],[284,"大水轮"],[285,"蘑蘑孢子"],[286,"独仙"],[287,"树懒熊"],
-[288,"游荡熊"],[289,"纳鲁鲁"],[290,"土居忍士"],[291,"蝉仙人"],[292,"空壳忍者"],
-[293,"吼吼鲸幼"],[294,"吼吼鲸"],[295,"爆音鲸"],[296,"拳拳蟹"],[297,"大力甲蟹"],
-[298,"小玛瑙"],[299,"磁力宝宝"],[300,"甜甜柔"],[301,"甜甜可"],[302,"蛇纹熊"],
-[303,"大嘴娃"],[304,"铁甲球"],[305,"冰铁甲球"],[306,"超甲铁球"],
-[307,"忍拳"],[308,"忍者拳"],[309,"臭鼬雷"],[310,"臭鼬电"],[311,"正电拍拍"],
-[312,"负电拍拍"],[313,"荧火虫"],[314,"月光蝶"],[315,"毒蔷薇"],[316,"臭金刚"],
-[317,"臭臭大王"],[318,"尖牙鲨"],[319,"大旋鳃鲨"],[320,"吼鲸王"],[321,"海天蚣"],
-[322,"牛火牛"],[323,"火山牛"],[324,"煤炭乌龟"],[325,"心跳鼻子"],[326,"扭扭爆"],
-[327,"乱乱鸟"],[328,"沙漠幼虫"],[329,"沙漠蝎"],[330,"大王铠"],[331,"仙人剌剌"],
-[332,"毒仙人剌"],[333,"羽毛雀"],[334,"弦月翼"],[335,"斗击熊"],[336,"大蟒"],
-[337,"月石"],[338,"日石"],[339,"泥泥鱼"],[340,"鲶鱼王"],[341,"小龙虾"],[342,"龙虾兵"],
-[343,"土偶娃娃"],[344,"土偶大王"],[345,"古树花"],[346,"古树王"],[347,"古代盔"],
-[348,"古代龙"],[349,"摇摆小鱼"],[350,"美纹鱼"],[351,"天气娃娃"],[352,"变幻龙"],
-[353,"迷魂娃"],[354,"怨影娃"],[355,"夜骷髅"],[356,"骷骷戏法师"],[357,"热带龙"],
-[358,"轰隆鲸"],[359,"无貌人"],[360,"胚胎球"],[361,"雪童子"],[362,"冰嘎啦"],
-[363,"海豹球"],[364,"海豹"],[365,"帝王海豹"],[366,"海螺宝贝"],[367,"猎人鱼"],
-[368,"水母人"],[369,"远古翼鱼"],[370,"恋心鱼"],[371,"小小龙"],[372,"甲壳龙"],
-[373,"暴飞龙"],[374,"波克比古Ⅱ幼"],[375,"波克比古Ⅱ"],[376,"波克比古Ⅱ大"],
-[377,"雷吉洛克"],[378,"冰吉洛克"],[379,"钢吉洛克"],[380,"拉地亚斯"],[381,"拉帝欧斯"],
+[85,"嘟嘟利"],[86,"小海狮"],[87,"白海狮"],[88,"臭泥"],[89,"臭臭泥"],[90,"大舌贝"],
+[91,"刺甲贝"],[92,"鬼斯"],[93,"鬼斯通"],[94,"耿鬼"],[95,"大岩蛇"],[96,"催眠貘"],
+[97,"引梦貘人"],[98,"大钳蟹"],[99,"巨钳蟹"],[100,"霹雳电球"],[101,"顽皮雷弹"],
+[102,"蛋蛋"],[103,"椰蛋树"],[104,"卡拉卡拉"],[105,"嘎啦嘎啦"],[106,"飞腿郎"],[107,"快拳郎"],
+[108,"大舌头"],[109,"瓦斯弹"],[110,"双弹瓦斯"],[111,"独角犀牛"],[112,"钻角犀兽"],[113,"吉利蛋"],
+[114,"蔓藤怪"],[115,"袋兽"],[116,"墨海马"],[117,"海刺龙"],[118,"角金鱼"],[119,"金鱼王"],
+[120,"海星星"],[121,"宝石海星"],[122,"魔墙人偶"],[123,"飞天螳螂"],[124,"迷唇姐"],[125,"电击兽"],
+[126,"鸭嘴火兽"],[127,"凯罗斯"],[128,"肯泰罗"],[129,"鲤鱼王"],[130,"暴鲤龙"],[131,"拉普拉斯"],
+[132,"百变怪"],[133,"伊布"],[134,"水伊布"],[135,"雷伊布"],[136,"火伊布"],[137,"多边兽"],
+[138,"菊石兽"],[139,"多刺菊石兽"],[140,"化石盔"],[141,"镰刀盔"],[142,"化石翼龙"],
+[143,"卡比兽"],[144,"急冻鸟"],[145,"闪电鸟"],[146,"火焰鸟"],[147,"迷你龙"],[148,"哈克龙"],
+[149,"快龙"],[150,"超梦"],[151,"梦幻"],
+// ── 第二世代 ──
+[152,"菊草叶"],[153,"月桂叶"],[154,"大竺葵"],[155,"火球鼠"],[156,"火岩鼠"],[157,"火暴兽"],
+[158,"小锯鳄"],[159,"蓝鳄"],[160,"大力鳄"],[161,"尾立"],[162,"大尾立"],[163,"咕咕"],
+[164,"猫头夜鹰"],[165,"芭瓢虫"],[166,"安瓢虫"],[167,"圆丝蛛"],[168,"阿利多斯"],[169,"叉字蝠"],
+[170,"灯笼鱼"],[171,"电灯怪"],[172,"皮丘"],[173,"皮宝宝"],[174,"宝宝丁"],[175,"波克比"],
+[176,"波克基古"],[177,"天然雀"],[178,"天然鸟"],[179,"咩利羊"],[180,"茸茸羊"],[181,"电龙"],
+[182,"美丽花"],[183,"玛力露"],[184,"玛力露丽"],[185,"树才怪"],[186,"蚊香蛙皇"],[187,"毽子草"],
+[188,"毽子花"],[189,"毽子棉"],[190,"长尾怪手"],[191,"向日种子"],[192,"向日花怪"],[193,"蜻蜻蜓"],
+[194,"乌波"],[195,"沼王"],[196,"太阳伊布"],[197,"月亮伊布"],[198,"黑暗鸦"],[199,"呆呆王"],
+[200,"梦妖"],[201,"未知图腾"],[202,"果然翁"],[203,"麒麟奇"],[204,"榛果球"],[205,"佛烈托斯"],
+[206,"土龙弟弟"],[207,"天蝎"],[208,"大钢蛇"],[209,"布鲁"],[210,"布鲁皇"],[211,"千针鱼"],
+[212,"巨钳螳螂"],[213,"壶壶"],[214,"赫拉克罗斯"],[215,"狃拉"],[216,"熊宝宝"],[217,"圈圈熊"],
+[218,"熔岩虫"],[219,"熔岩蜗牛"],[220,"小山猪"],[221,"长毛猪"],[222,"太阳珊瑚"],[223,"铁炮鱼"],
+[224,"章鱼桶"],[225,"信使鸟"],[226,"巨翅飞鱼"],[227,"盔甲鸟"],[228,"戴鲁比"],[229,"黑鲁加"],
+[230,"刺龙王"],[231,"小小象"],[232,"顿甲"],[233,"多边兽２型"],[234,"惊角鹿"],[235,"图图犬"],
+[236,"无畏小子"],[237,"战舞郎"],[238,"迷唇娃"],[239,"电击怪"],[240,"鸭嘴宝宝"],[241,"大奶罐"],
+[242,"幸福蛋"],[243,"雷公"],[244,"炎帝"],[245,"水君"],
+[246,"幼基拉斯"],[247,"沙基拉斯"],[248,"班基拉斯"],[249,"洛奇亚"],[250,"凤王"],[251,"时拉比"],
+// ── 第三世代 ──
+[252,"木守宫"],[253,"森林蜥蜴"],[254,"蜥蜴王"],[255,"火稚鸡"],[256,"力壮鸡"],[257,"火焰鸡"],
+[258,"水跃鱼"],[259,"沼跃鱼"],[260,"巨沼怪"],[261,"土狼犬"],[262,"大狼犬"],[263,"蛇纹熊"],
+[264,"直冲熊"],[265,"刺尾虫"],[266,"甲壳茧"],[267,"狩猎凤蝶"],[268,"盾甲茧"],[269,"毒粉蛾"],
+[270,"莲叶童子"],[271,"莲帽小童"],[272,"乐天河童"],[273,"橡实果"],[274,"长鼻叶"],[275,"狡猾天狗"],
+[276,"傲骨燕"],[277,"大王燕"],[278,"长翅鸥"],[279,"大嘴鸥"],[280,"拉鲁拉丝"],[281,"奇鲁莉安"],
+[282,"沙奈朵"],[283,"溜溜糖球"],[284,"雨翅蛾"],[285,"蘑蘑菇"],[286,"斗笠菇"],[287,"懒人獭"],
+[288,"过动猿"],[289,"请假王"],[290,"土居忍士"],[291,"铁面忍者"],[292,"脱壳忍者"],[293,"咕妞妞"],
+[294,"吼爆弹"],[295,"爆音怪"],[296,"幕下力士"],[297,"铁掌力士"],[298,"露力丽"],[299,"朝北鼻"],
+[300,"向尾喵"],[301,"优雅猫"],[302,"勾魂眼"],[303,"大嘴娃"],[304,"可可多拉"],[305,"可多拉"],
+[306,"波士可多拉"],[307,"玛沙那"],[308,"恰雷姆"],[309,"落雷兽"],[310,"雷电兽"],[311,"正电拍拍"],
+[312,"负电拍拍"],[313,"电萤虫"],[314,"甜甜萤"],[315,"毒蔷薇"],[316,"溶食兽"],[317,"吞食兽"],
+[318,"利牙鱼"],[319,"巨牙鲨"],[320,"吼吼鲸"],[321,"吼鲸王"],[322,"呆火驼"],[323,"喷火驼"],
+[324,"煤炭龟"],[325,"跳跳猪"],[326,"噗噗猪"],[327,"晃晃斑"],[328,"大颚蚁"],[329,"超音波幼虫"],
+[330,"沙漠蜻蜓"],[331,"刺球仙人掌"],[332,"梦歌仙人掌"],[333,"青绵鸟"],[334,"七夕青鸟"],[335,"猫鼬斩"],
+[336,"饭匙蛇"],[337,"月石"],[338,"太阳岩"],[339,"泥泥鳅"],[340,"鲶鱼王"],[341,"龙虾小兵"],
+[342,"铁螯龙虾"],[343,"天秤偶"],[344,"念力土偶"],[345,"触手百合"],[346,"摇篮百合"],[347,"太古羽虫"],
+[348,"太古盔甲"],[349,"丑丑鱼"],[350,"美纳斯"],[351,"飘浮泡泡"],[352,"变隐龙"],[353,"怨影娃娃"],
+[354,"诅咒娃娃"],[355,"夜巡灵"],[356,"彷徨夜灵"],[357,"热带龙"],[358,"风铃铃"],[359,"阿勃梭鲁"],
+[360,"小果然"],[361,"雪童子"],[362,"冰鬼护"],[363,"海豹球"],[364,"海魔狮"],[365,"帝牙海狮"],
+[366,"珍珠贝"],[367,"猎斑鱼"],[368,"樱花鱼"],[369,"古空棘鱼"],[370,"爱心鱼"],[371,"宝贝龙"],
+[372,"甲壳龙"],[373,"暴飞龙"],[374,"铁哑铃"],[375,"金属怪"],[376,"巨金怪"],
+[377,"雷吉洛克"],[378,"雷吉艾斯"],[379,"雷吉斯奇鲁"],[380,"拉帝亚斯"],[381,"拉帝欧斯"],
 [382,"盖欧卡"],[383,"固拉多"],[384,"烈空坐"],[385,"基拉祈"],[386,"代欧奇希斯"],
-[387,"草苗"],[388,"盔甲草"],[389,"土台龟"],[390,"小猿猴"],[391,"烈焰猴"],[392,"炽焰猴"],
-[393,"小企鹅"],[394,"波加曼"],[395,"帝王拿波"],[396,"姬小鸟"],[397,"迷你芸汀"],
-[398,"大嘴鸟"],[399,"圆滚珠"],[400,"达磨鼠"],[401,"草地虫"],[402,"草地甲虫"],
-[403,"小电狮"],[404,"电气兽"],[405,"雷电兽"],[406,"花蕾球"],[407,"千针花"],
-[408,"颅鸮龙"],[409,"大颅鸮龙"],[410,"盾甲幼"],[411,"盾甲"],[412,"蓑衣虫"],
-[413,"蓑衣甲"],[414,"蓑衣蛾"],[415,"蜂巢虫"],[416,"女王蜂"],[417,"慢慢鼠"],
-[418,"浮浮貂"],[419,"大浮貂"],[420,"草实"],[421,"樱花草实"],[422,"磁弹鱼"],
-[423,"海兔兽"],[424,"长臂猿"],[425,"飘飘球"],[426,"爆炸气球"],[427,"跳跳兔"],
-[428,"月兔"],[429,"幽冥魔偶"],[430,"黑暗鸦王"],[431,"小嗖嗖"],[432,"嗖嗖猫"],
-[433,"铃音小天使"],[434,"臭鼬宝"],[435,"臭鼬暗"],[436,"铜镜怪"],[437,"钟表暗鬼"],
-[438,"打呵欠树"],[439,"悠闲球"],[440,"幸福糖"],[441,"爱心鸟"],[442,"多重甲"],
-[443,"鲤鱼王龙"],[444,"快龙幼"],[445,"烈咬陆鲨"],[446,"卡比兽幼"],[447,"无畏小子"],
-[448,"路卡利欧"],[449,"呆呆象"],[450,"战象"],[451,"毒针蝎幼"],[452,"大毒针蝎"],
-[453,"彩色毒蛙"],[454,"大彩蛙"],[455,"猎食植物"],[456,"萤光鱼"],[457,"流光鱼"],
-[458,"巡游翼鱼"],[459,"雪衣龙"],[460,"玛丽雪"],[461,"黑暗犬进化"],[462,"磁怪进化"],
-[463,"大舌头进化"],[464,"大犀牛进化"],[465,"蔓藤怪进化"],[466,"电击兽进化"],
-[467,"鸭嘴火龙进化"],[468,"幸福蛋进化"],[469,"飞天螳螂进化"],[470,"叶伊布"],
-[471,"冰伊布"],[472,"天蝎进化"],[473,"猛犸象"],[474,"多边兽Z"],[475,"拉鲁拉斯骑士"],
-[476,"大磁怪"],[477,"夜骷髅幻影"],[478,"白雪姬"],[479,"洗翠轮"],[480,"知识神"],
-[481,"意志神"],[482,"情感神"],[483,"帝牙卢卡"],[484,"帕路奇亚"],[485,"席多蓝恩"],
-[486,"雷吉奇卡斯"],[487,"骑拉帝纳"],[488,"溟波神"],[489,"曼波纽"],[490,"曼那霏"],
-[491,"达克莱伊"],[492,"谢米"],[493,"阿尔宙斯"],
-[494,"胜利之神维多利亚"],[495,"藤藤蛇"],[496,"青草蛇"],[497,"六面藤蛇"],
-[498,"暖暖猪"],[499,"战斗猪"],[500,"炎武王"],[501,"水水獭"],[502,"双贝海獭"],
-[503,"大剑鬼"],[504,"见习鼠"],[505,"看守鼠"],[506,"小约克犬"],[507,"约克兽"],
-[508,"巨约克犬"],[509,"小阴影猫"],[510,"阴影猫"],[511,"叶猴"],[512,"叶猴王"],
-[513,"火焰猪仔"],[514,"火焰猪"],[515,"水桶蛙"],[516,"水坛蛙"],[517,"草梦貘"],
-[518,"梦梦貘"],[519,"芸汀雀"],[520,"飞燕雀"],[521,"芸汀鸟"],[522,"奔电斑马"],
-[523,"雷电斑马"],[524,"矿石熊"],[525,"矿石熊进化"],[526,"大矿石熊"],[527,"蓝蝙蝠"],
-[528,"大蓝蝙蝠"],[529,"地鼹鼠"],[530,"龙地鼹鼠"],[531,"爱心熊"],[532,"斗拳熊"],
-[533,"斗拳熊进化"],[534,"大斗拳熊"],[535,"蝌蚪鼓"],[536,"蛙鼓"],[537,"大蛙鼓"],
-[538,"柔道熊"],[539,"空手道熊"],[540,"草叶虫"],[541,"蓑衣虫2"],[542,"枯叶虫"],
-[543,"毒刺虫"],[544,"毒可虫"],[545,"毒可龙"],[546,"棉花糖"],[547,"棉花糖进化"],
-[548,"香草蛋"],[549,"香草花"],[550,"条纹鲈"],[551,"沙漠鳄"],[552,"沙漠鳄进化"],
-[553,"大沙漠鳄"],[554,"达摩小"],[555,"达摩"],[556,"仙人掌刺"],[557,"甲壳蟹"],
-[558,"岩石蟹"],[559,"流氓小子"],[560,"流氓"],[561,"神庙鸟"],[562,"石板幽灵"],
-[563,"石板幽灵进化"],[564,"古代盔2"],[565,"古代龙2"],[566,"翼龙化石"],[567,"翼龙"],
-[568,"垃圾袋"],[569,"大垃圾"],[570,"小狐狸"],[571,"狡猾狐狸"],[572,"卷毛羊"],
-[573,"卷毛羊进化"],[574,"哥德小"],[575,"哥德中"],[576,"哥德大"],[577,"触手星小"],
-[578,"触手星中"],[579,"触手星大"],[580,"丑鸭"],[581,"天鹅"],[582,"小雪人"],
-[583,"雪人进化"],[584,"大雪人"],[585,"鹿角"],[586,"鹿角进化"],[587,"电蚊"],
-[588,"甲虫"],[589,"盔甲虫"],[590,"蘑菇帽"],[591,"蘑菇球"],[592,"水母球"],
-[593,"大水母"],[594,"爱心鱼"],[595,"电蜘蛛"],[596,"电蛛网"],[597,"铁刺球"],
-[598,"铁刺花"],[599,"齿轮小"],[600,"齿轮中"],[601,"齿轮大"],[602,"电泥鳅"],
-[603,"大电泥鳅"],[604,"恐电鳗"],[605,"小宇宙"],[606,"宇宙怪"],[607,"蜡烛鬼"],
-[608,"台灯鬼"],[609,"吊灯鬼"],[610,"牙牙龙"],[611,"龙进化"],[612,"大剑龙"],
-[613,"北极熊幼"],[614,"北极熊"],[615,"冰晶怪"],[616,"蜗牛壳"],[617,"飞蜗牛"],
-[618,"泥泥鱼2"],[619,"爪爪虫"],[620,"爪爪甲"],[621,"龙甲"],[622,"石头人小"],
-[623,"石头人"],[624,"忍者小"],[625,"忍者大"],[626,"牛仔牛"],[627,"大猛禽"],
-[628,"勇猛禽"],[629,"秃鹰幼"],[630,"秃鹰大"],[631,"大火盆"],[632,"铁蚂蚁"],
-[633,"双首龙幼"],[634,"双首龙"],[635,"三首恶龙"],[636,"燃烧虫"],[637,"焚烧蛾"],
-[638,"科巴鲁翁"],[639,"铁骨土翁"],[640,"草叶翁"],[641,"龙卷飞云"],[642,"雷电云"],
-[643,"燃烧的真理"],[644,"震惊的理想"],[645,"土地神"],[646,"凯路迪欧"],[647,"美洛耶塔"],
-[648,"盖诺赛克特"],[649,"盖诺赛克特进化"],
-[650,"栗子刺猬"],[651,"盔甲栗刺猬"],[652,"大栗刺猬"],[653,"小火狐"],[654,"小火狐进化"],
-[655,"魔法狐"],[656,"青蛙幼"],[657,"青蛙中"],[658,"忍者蛙"],[659,"毛绒兔"],
-[660,"破坏兔"],[661,"小翅雀"],[662,"中翅雀"],[663,"大翅雀"],[664,"粉蝶幼"],
-[665,"粉蝶蛹"],[666,"粉蝶"],[667,"狮子幼"],[668,"狮王"],[669,"小花束"],
-[670,"花束进化"],[671,"玫瑰花束"],[672,"小山羊"],[673,"山羊王"],[674,"熊猫幼"],
-[675,"功夫熊猫"],[676,"美发犬"],[677,"幻惑猫"],[678,"魔惑猫"],[679,"幽灵剑"],
-[680,"幽灵剑进化"],[681,"皇室剑"],[682,"香水精"],[683,"香水精进化"],[684,"糖果精"],
-[685,"糖果精进化"],[686,"墨鱼鬼"],[687,"大墨鱼鬼"],[688,"鹰鳌蟹"],[689,"大鹰鳌蟹"],
-[690,"海草怪"],[691,"毒礁怪"],[692,"炮手虾"],[693,"大炮手虾"],[694,"电蜥蜴"],
-[695,"电蜥蜴进化"],[696,"古代龙3"],[697,"古代龙王"],[698,"绅士龙"],[699,"绅士龙进化"],
-[700,"仙子伊布"],[701,"格斗鸟"],[702,"电球鼠"],[703,"宝石岩"],[704,"软软龙"],
-[705,"软软龙进化"],[706,"软软龙大"],[707,"钥匙环"],[708,"树木灵"],[709,"大树木灵"],
-[710,"南瓜精"],[711,"大南瓜精"],[712,"冰柱熊"],[713,"大冰柱熊"],[714,"回声蝠"],
-[715,"大回声蝠"],[716,"哲尔尼亚斯"],[717,"伊裴尔塔尔"],[718,"基格尔德"],
-[719,"蒂安希"],[720,"胡帕"],[721,"波尔凯尼恩"],
-[722,"木木枭"],[723,"木木枭进化"],[724,"决决木枭"],[725,"火斑喵"],[726,"火炎喵"],
-[727,"猛火虎"],[728,"球球海狮"],[729,"海狮幼"],[730,"白马海狮"],[731,"小啄鸟"],
-[732,"啄鸟中"],[733,"啄鸟大"],[734,"棉花糖2"],[735,"棉花糖大"],[736,"幼虫"],
-[737,"电甲虫"],[738,"大电甲虫"],[739,"武道虾"],[740,"武道虾进化"],[741,"草舞鸟"],
-[742,"仙尘蝶"],[743,"仙尘蝶大"],[744,"岩狗幼"],[745,"岩狗"],[746,"气泡鱼"],
-[747,"毒针水母幼"],[748,"毒针水母"],[749,"泥泥马"],[750,"泥泥马大"],[751,"螃蟹小"],
-[752,"螃蟹大"],[753,"食虫草幼"],[754,"食虫草大"],[755,"蘑菇人幼"],[756,"蘑菇人"],
-[757,"火蛇幼"],[758,"火蛇"],[759,"熊猫幼2"],[760,"功夫熊猫2"],[761,"花朵婴儿"],
-[762,"花朵少女"],[763,"花朵女王"],[764,"椰树猫"],[765,"彩球猫"],[766,"变色猴"],
-[767,"蟹幼"],[768,"蟹大"],[769,"沙堆鬼幼"],[770,"沙堆鬼"],[771,"海草龙"],
-[772,"合体细胞"],[773,"合体核"],[774,"陨石宝宝"],[775,"树懒进化"],[776,"火山壳"],
-[777,"电球宝宝"],[778,"拟人偶"],[779,"吻鱼"],[780,"吻鱼大"],[781,"岩角鱼"],
-[782,"迷你龙2"],[783,"甲龙2"],[784,"肯泰罗2"],[785,"卡璞·鸣鸣"],[786,"卡璞·哞哞"],
-[787,"卡璞·布鲁鲁"],[788,"卡璞·蕾蕾"],[789,"科斯莫古"],[790,"科斯莫姆"],
-[791,"索尔迦雷欧"],[792,"露奈雅拉"],[793,"虚空魔神"],[794,"毒电兽"],[795,"炽焰王"],
-[796,"闪电王"],[797,"史乔普拉"],[798,"史乔普拉进化"],[799,"马夏多"],[800,"奈克洛兹玛"],
-[801,"玛机雅娜"],[802,"玛夏多"],
-[803,"蚊香蛙幼"],[804,"蚊香蛙大"],[805,"卡璞进化"],[806,"卡璞大"],[807,"泽拉欧拉"],
-[808,"美录坦"],[809,"美录梅塔"],
-[810,"敲音猴"],[811,"裂音猴"],[812,"轰鸣猩猩"],[813,"炎兔儿"],[814,"腾跃兔"],
-[815,"闪焰王牌"],[816,"泪眼蜥"],[817,"忧郁蜥"],[818,"泪流蜥"],[819,"圆滚鼠"],
-[820,"大圆滚鼠"],[821,"急冻鸟幼"],[822,"漆黑鸦"],[823,"铠甲鸦"],[824,"蚂蚁幼"],
-[825,"蚂蚁进化"],[826,"大蚂蚁"],[827,"小偷狐"],[828,"大偷狐"],[829,"棉花糖3"],
-[830,"棉花球3"],[831,"棉花羊"],[832,"剪刀羊"],[833,"牙牙鳄幼"],[834,"牙牙鳄"],
-[835,"电刺球"],[836,"电炸球"],[837,"煤炭龟幼"],[838,"煤炭龟"],[839,"大煤炭龟"],
-[840,"苹果毛虫"],[841,"苹果甲虫"],[842,"苹果蛇"],[843,"沙蛇幼"],[844,"沙蛇大"],
-[845,"水面鱼"],[846,"潜水鱼"],[847,"快速鱼"],[848,"毒毒蛾2"],[849,"电幻蝶"],
-[850,"大龙虾幼"],[851,"大龙虾"],[852,"抓握猴"],[853,"猿握猴"],[854,"茶壶鬼幼"],
-[855,"茶壶鬼"],[856,"毒蝴蝶幼"],[857,"毒蝴蝶中"],[858,"毒蝴蝶大"],[859,"狐狸精幼"],
-[860,"狐狸精中"],[861,"狐狸精大"],[862,"黑色球滚鼠"],[863,"铠甲猫"],[864,"夜骷髅2"],
-[865,"飞腿郎2"],[866,"迷唇姐2"],[867,"幻影幽灵"],[868,"奶油球"],[869,"奶油蛋糕"],
-[870,"独剑鞘幼"],[871,"独剑鞘"],[872,"雪蜘蛛"],[873,"冰雪蛛"],[874,"金刚鼓"],
-[875,"冰鼓"],[876,"双剑鞘"],[877,"猫鼬探员"],[878,"铁甲犀牛幼"],[879,"铁甲犀牛"],
-[880,"岩翼恐龙"],[881,"冰翼龙"],[882,"岩翼龙"],[883,"冰翼龙大"],[884,"超级岩甲龙"],
-[885,"黑暗龙幼"],[886,"黑暗龙中"],[887,"黑暗龙大"],[888,"苍响"],[889,"藏玛然特"],
-[890,"无极汰那"],[891,"波克基幼"],[892,"武道熊师"],[893,"萨戮德"],[894,"雷吉电力"],
-[895,"雷吉龙"],[896,"冰雪马"],[897,"灵魂马"],[898,"雪王"],
-[899,"穿山鼠2"],[900,"大葱鸭2"],[901,"月兔2"],[902,"彩翼鸟"],[903,"金刚螃蟹"],
-[904,"沼王2"],[905,"地土翁"],
-[906,"草苗猫"],[907,"青草猫"],[908,"大草猫"],[909,"幼火鳄"],[910,"中火鳄"],
-[911,"大火鳄"],[912,"小水鸭"],[913,"中水鸭"],[914,"大水鸭"],[915,"小蜘蛛"],
-[916,"大蜘蛛"],[917,"光蝶幼"],[918,"光蝶"],[919,"小飞鼠"],[920,"飞鼠大"],
-[921,"熊猫幼3"],[922,"熊猫大3"],[923,"小蝌蚪"],[924,"大蝌蚪"],[925,"小蜗牛"],
-[926,"中蜗牛"],[927,"大蜗牛"],[928,"小龙鱼"],[929,"中龙鱼"],[930,"大龙鱼"],
-[931,"狡猾鸟"],[932,"幽灵鸟"],[933,"铁甲龟幼"],[934,"铁甲龟"],[935,"小灯笼鱼"],
-[936,"大灯笼鱼"],[937,"电鳗2"],[938,"电幽灵幼"],[939,"电幽灵大"],[940,"蛙幼2"],
-[941,"蛙大2"],[942,"蜘蛛网"],[943,"大蜘蛛网"],[944,"沙丘幼"],[945,"沙丘大"],
-[946,"幼犰狳"],[947,"大犰狳"],[948,"幼孔雀"],[949,"大孔雀"],[950,"地龙幼"],
-[951,"地龙大"],[952,"小虫2"],[953,"大虫2"],[954,"小狐幼"],[955,"九尾小"],
-[956,"九尾大"],[957,"仙子幼"],[958,"仙子大"],[959,"冰熊幼"],[960,"冰熊大"],
-[961,"小章鱼2"],[962,"大章鱼2"],[963,"海豚幼"],[964,"大海豚"],[965,"鹰幼"],
-[966,"鹰大"],[967,"飞天翼手"],[968,"大翼手"],[969,"毒菇幼"],[970,"毒菇大"],
-[971,"小蝙蝠2"],[972,"大蝙蝠2"],[973,"三地鼠2"],[974,"大犀牛2"],[975,"石头人2"],
-[976,"大石头人"],[977,"拟态花草"],[978,"大拟态草"],[979,"珊瑚礁"],[980,"铁蛤蟆"],
-[981,"齿轮4"],[982,"乌鸦幼"],[983,"大乌鸦"],[984,"格斗熊幼"],[985,"格斗熊大"],
-[986,"草精幼"],[987,"草精大"],[988,"小鱼幼"],[989,"大鱼"],[990,"电球2"],
-[991,"忍者猫幼"],[992,"忍者猫大"],[993,"灵魂幽灵"],[994,"大灵魂幽灵"],[995,"电龙2"],
-[996,"冰龙幼"],[997,"冰龙"],[998,"铁石幼"],[999,"铁石大"],[1000,"和谐之力"],
-[1001,"仙子大神"],[1002,"格斗大神"],[1003,"钢铠鸟"],[1004,"毒暗兽"],[1005,"暗格斗"],
-[1006,"铁束"],[1007,"铁胆龙"],[1008,"故勒顿"],[1009,"密勒顿"],[1010,"小树貂"],
-[1011,"树貂大"],[1012,"铁蛾"],[1013,"铁荆棘"],[1014,"铁岩石"],[1015,"铁草貂"],
-[1016,"铁水母"],[1017,"铁将军"],[1018,"铁足鱼"],[1019,"铁蟹"],[1020,"铁叶龙"],
-[1021,"铁箱子"],[1022,"铁猛禽"],[1023,"铁头盔"],[1024,"铁锤巨人"],[1025,"欧哈玛"]
+// ── 第四世代 ──
+[387,"草苗龟"],[388,"树林龟"],[389,"土台龟"],[390,"小火焰猴"],[391,"猛火猴"],[392,"烈焰猴"],
+[393,"波加曼"],[394,"波皇子"],[395,"帝王拿波"],[396,"姆克儿"],[397,"姆克鸟"],[398,"姆克鹰"],
+[399,"大牙狸"],[400,"大尾狸"],[401,"圆法师"],[402,"音箱蟀"],[403,"小猫怪"],[404,"勒克猫"],
+[405,"伦琴猫"],[406,"含羞苞"],[407,"罗丝雷朵"],[408,"头盖龙"],[409,"战槌龙"],[410,"盾甲龙"],
+[411,"护城龙"],[412,"结草儿"],[413,"结草贵妇"],[414,"绅士蛾"],[415,"三蜜蜂"],[416,"蜂女王"],
+[417,"帕奇利兹"],[418,"泳圈鼬"],[419,"浮潜鼬"],[420,"樱花宝"],[421,"樱花儿"],[422,"无壳海兔"],
+[423,"海兔兽"],[424,"双尾怪手"],[425,"飘飘球"],[426,"随风球"],[427,"卷卷耳"],[428,"长耳兔"],
+[429,"梦妖魔"],[430,"乌鸦头头"],[431,"魅力喵"],[432,"东施喵"],[433,"铃铛响"],[434,"臭鼬噗"],
+[435,"坦克臭鼬"],[436,"铜镜怪"],[437,"青铜钟"],[438,"盆才怪"],[439,"魔尼尼"],[440,"小福蛋"],
+[441,"聒噪鸟"],[442,"花岩怪"],[443,"圆陆鲨"],[444,"尖牙陆鲨"],[445,"烈咬陆鲨"],[446,"小卡比兽"],
+[447,"利欧路"],[448,"路卡利欧"],[449,"沙河马"],[450,"河马兽"],[451,"钳尾蝎"],[452,"龙王蝎"],
+[453,"不良蛙"],[454,"毒骷蛙"],[455,"尖牙笼"],[456,"荧光鱼"],[457,"霓虹鱼"],[458,"小球飞鱼"],
+[459,"雪笠怪"],[460,"暴雪王"],[461,"玛狃拉"],[462,"自爆磁怪"],[463,"大舌舔"],[464,"超甲狂犀"],
+[465,"巨蔓藤"],[466,"电击魔兽"],[467,"鸭嘴炎兽"],[468,"波克基斯"],[469,"远古巨蜓"],[470,"叶伊布"],
+[471,"冰伊布"],[472,"天蝎王"],[473,"象牙猪"],[474,"多边兽乙型"],[475,"艾路雷朵"],[476,"大朝北鼻"],
+[477,"黑夜魔灵"],[478,"雪妖女"],[479,"洛托姆"],[480,"由克希"],[481,"艾姆利多"],[482,"亚克诺姆"],
+[483,"帝牙卢卡"],[484,"帕路奇亚"],[485,"席多蓝恩"],[486,"雷吉奇卡斯"],[487,"骑拉帝纳"],[488,"克雷色利亚"],
+[489,"霏欧纳"],[490,"玛纳霏"],[491,"达克莱伊"],[492,"谢米"],[493,"阿尔宙斯"],
+// ── 第五世代 ──
+[494,"比克提尼"],[495,"藤藤蛇"],[496,"青藤蛇"],[497,"君主蛇"],
+[498,"暖暖猪"],[499,"炒炒猪"],[500,"炎武王"],[501,"水水獭"],[502,"双刃丸"],[503,"大剑鬼"],
+[504,"探探鼠"],[505,"步哨鼠"],[506,"小约克"],[507,"哈约克"],[508,"长毛狗"],[509,"扒手猫"],
+[510,"酷豹"],[511,"花椰猴"],[512,"花椰猿"],[513,"爆香猴"],[514,"爆香猿"],[515,"冷水猴"],
+[516,"冷水猿"],[517,"食梦梦"],[518,"梦梦蚀"],[519,"豆豆鸽"],[520,"咕咕鸽"],[521,"高傲雉鸡"],
+[522,"斑斑马"],[523,"雷电斑马"],[524,"石丸子"],[525,"地幔岩"],[526,"庞岩怪"],[527,"滚滚蝙蝠"],
+[528,"心蝙蝠"],[529,"螺钉地鼠"],[530,"龙头地鼠"],[531,"差不多娃娃"],[532,"搬运小匠"],[533,"铁骨土人"],
+[534,"修建老匠"],[535,"圆蝌蚪"],[536,"蓝蟾蜍"],[537,"蟾蜍王"],[538,"投摔鬼"],[539,"打击鬼"],
+[540,"虫宝包"],[541,"宝包茧"],[542,"保姆虫"],[543,"百足蜈蚣"],[544,"车轮球"],[545,"蜈蚣王"],
+[546,"木棉球"],[547,"风妖精"],[548,"百合根娃娃"],[549,"裙儿小姐"],[550,"野蛮鲈鱼"],[551,"黑眼鳄"],
+[552,"混混鳄"],[553,"流氓鳄"],[554,"火红不倒翁"],[555,"达摩狒狒"],[556,"沙铃仙人掌"],[557,"石居蟹"],
+[558,"岩殿居蟹"],[559,"滑滑小子"],[560,"头巾混混"],[561,"象征鸟"],[562,"哭哭面具"],[563,"迭失棺"],
+[564,"原盖海龟"],[565,"肋骨海龟"],[566,"始祖小鸟"],[567,"始祖大鸟"],[568,"破破袋"],[569,"灰尘山"],
+[570,"索罗亚"],[571,"索罗亚克"],[572,"泡沫栗鼠"],[573,"奇诺栗鼠"],[574,"哥德宝宝"],[575,"哥德小童"],
+[576,"哥德小姐"],[577,"单卵细胞球"],[578,"双卵细胞球"],[579,"人造细胞卵"],[580,"鸭宝宝"],[581,"舞天鹅"],
+[582,"迷你冰"],[583,"多多冰"],[584,"双倍多多冰"],[585,"四季鹿"],[586,"萌芽鹿"],[587,"电飞鼠"],
+[588,"盖盖虫"],[589,"骑士蜗牛"],[590,"哎呀球菇"],[591,"败露球菇"],[592,"轻飘飘"],[593,"胖嘟嘟"],
+[594,"保姆曼波"],[595,"电电虫"],[596,"电蜘蛛"],[597,"种子铁球"],[598,"坚果哑铃"],[599,"齿轮儿"],
+[600,"齿轮组"],[601,"齿轮怪"],[602,"麻麻小鱼"],[603,"麻麻鳗"],[604,"麻麻鳗鱼王"],[605,"小灰怪"],
+[606,"大宇怪"],[607,"烛光灵"],[608,"灯火幽灵"],[609,"水晶灯火灵"],[610,"牙牙"],[611,"斧牙龙"],
+[612,"双斧战龙"],[613,"喷嚏熊"],[614,"冻原熊"],[615,"几何雪花"],[616,"小嘴蜗"],[617,"敏捷虫"],
+[618,"泥巴鱼"],[619,"功夫鼬"],[620,"师父鼬"],[621,"赤面龙"],[622,"泥偶小人"],[623,"泥偶巨人"],
+[624,"驹刀小兵"],[625,"劈斩司令"],[626,"爆炸头水牛"],[627,"毛头小鹰"],[628,"勇士雄鹰"],[629,"秃鹰丫头"],
+[630,"秃鹰娜"],[631,"熔蚁兽"],[632,"铁蚁"],[633,"单首龙"],[634,"双首暴龙"],[635,"三首恶龙"],
+[636,"燃烧虫"],[637,"火神蛾"],[638,"勾帕路翁"],[639,"代拉基翁"],[640,"毕力吉翁"],[641,"龙卷云"],
+[642,"雷电云"],[643,"莱希拉姆"],[644,"捷克罗姆"],[645,"土地云"],[646,"酋雷姆"],[647,"凯路迪欧"],
+[648,"美洛耶塔"],[649,"盖诺赛克特"],
+// ── 第六世代 ──
+[650,"哈力栗"],[651,"胖胖哈力"],[652,"布里卡隆"],[653,"火狐狸"],[654,"长尾火狐"],[655,"妖火红狐"],
+[656,"呱呱泡蛙"],[657,"呱头蛙"],[658,"甲贺忍蛙"],[659,"掘掘兔"],[660,"掘地兔"],[661,"小箭雀"],
+[662,"火箭雀"],[663,"烈箭鹰"],[664,"粉蝶虫"],[665,"粉蝶蛹"],[666,"彩粉蝶"],[667,"小狮狮"],
+[668,"火炎狮"],[669,"花蓓蓓"],[670,"花叶蒂"],[671,"花洁夫人"],[672,"坐骑小羊"],[673,"坐骑山羊"],
+[674,"顽皮熊猫"],[675,"流氓熊猫"],[676,"多丽米亚"],[677,"妙喵"],[678,"超能妙喵"],[679,"独剑鞘"],
+[680,"双剑鞘"],[681,"坚盾剑怪"],[682,"粉香香"],[683,"芳香精"],[684,"绵绵泡芙"],[685,"胖甜妮"],
+[686,"好啦鱿"],[687,"乌贼王"],[688,"龟脚脚"],[689,"龟足巨铠"],[690,"垃垃藻"],[691,"毒藻龙"],
+[692,"铁臂枪虾"],[693,"钢炮臂虾"],[694,"伞电蜥"],[695,"光电伞蜥"],[696,"宝宝暴龙"],[697,"怪颚龙"],
+[698,"冰雪龙"],[699,"冰雪巨龙"],[700,"仙子伊布"],[701,"摔角鹰人"],[702,"咚咚鼠"],[703,"小碎钻"],
+[704,"黏黏宝"],[705,"黏美儿"],[706,"黏美龙"],[707,"钥圈儿"],[708,"小木灵"],[709,"朽木妖"],
+[710,"南瓜精"],[711,"南瓜怪人"],[712,"冰宝"],[713,"冰岩怪"],[714,"嗡蝠"],[715,"音波龙"],
+[716,"哲尔尼亚斯"],[717,"伊裴尔塔尔"],[718,"基格尔德"],[719,"蒂安希"],[720,"胡帕"],[721,"波尔凯尼恩"],
+// ── 第七世代 ──
+[722,"木木枭"],[723,"投羽枭"],[724,"狙射树枭"],[725,"火斑喵"],[726,"炎热喵"],[727,"炽焰咆哮虎"],
+[728,"球球海狮"],[729,"花漾海狮"],[730,"西狮海壬"],[731,"小笃儿"],[732,"喇叭啄鸟"],[733,"铳嘴大鸟"],
+[734,"猫鼬少"],[735,"猫鼬探长"],[736,"强颚鸡母虫"],[737,"虫电宝"],[738,"锹农炮虫"],[739,"好胜蟹"],
+[740,"好胜毛蟹"],[741,"花舞鸟"],[742,"萌虻"],[743,"蝶结萌虻"],[744,"岩狗狗"],[745,"鬃岩狼人"],
+[746,"弱丁鱼"],[747,"好坏星"],[748,"超坏星"],[749,"泥驴仔"],[750,"重泥挽马"],[751,"滴蛛"],
+[752,"滴蛛霸"],[753,"伪螳草"],[754,"兰螳花"],[755,"睡睡菇"],[756,"灯罩夜菇"],[757,"夜盗火蜥"],
+[758,"焰后蜥"],[759,"童偶熊"],[760,"穿著熊"],[761,"甜竹竹"],[762,"甜舞妮"],[763,"甜冷美后"],
+[764,"花疗环环"],[765,"智挥猩"],[766,"投掷猴"],[767,"胆小虫"],[768,"具甲武者"],[769,"沙丘娃"],
+[770,"噬沙堡爷"],[771,"拳海参"],[772,"属性：空"],[773,"银伴战兽"],[774,"小陨星"],[775,"树枕尾熊"],
+[776,"爆焰龟兽"],[777,"托戈德玛尔"],[778,"谜拟Q"],[779,"磨牙彩皮鱼"],[780,"老翁龙"],[781,"破破舵轮"],
+[782,"心鳞宝"],[783,"鳞甲龙"],[784,"杖尾鳞甲龙"],[785,"卡璞・鸣鸣"],[786,"卡璞・蝶蝶"],[787,"卡璞・哞哞"],
+[788,"卡璞・鳍鳍"],[789,"科斯莫古"],[790,"科斯莫姆"],[791,"索尔迦雷欧"],[792,"露奈雅拉"],[793,"虚吾伊德"],
+[794,"爆肌蚊"],[795,"费洛美螂"],[796,"电束木"],[797,"铁火辉夜"],[798,"纸御剑"],[799,"恶食大王"],
+[800,"奈克洛兹玛"],[801,"玛机雅娜"],[802,"玛夏多"],[803,"毒贝比"],[804,"四颚针龙"],[805,"垒磊石"],
+[806,"砰头小丑"],[807,"捷拉奥拉"],[808,"美录坦"],[809,"美录梅塔"],
+// ── 第八世代 ──
+[810,"敲音猴"],[811,"啪咚猴"],[812,"轰擂金刚猩"],[813,"炎兔儿"],[814,"腾蹴小将"],[815,"闪焰王牌"],
+[816,"泪眼蜥"],[817,"变涩蜥"],[818,"千面避役"],[819,"贪心栗鼠"],[820,"藏饱栗鼠"],[821,"稚山雀"],
+[822,"蓝鸦"],[823,"钢铠鸦"],[824,"索侦虫"],[825,"天罩虫"],[826,"以欧路普"],[827,"偷儿狐"],
+[828,"狐大盗"],[829,"幼棉棉"],[830,"白蓬蓬"],[831,"毛辫羊"],[832,"毛毛角羊"],[833,"咬咬龟"],
+[834,"暴噬龟"],[835,"来电汪"],[836,"逐电犬"],[837,"小炭仔"],[838,"大炭车"],[839,"巨炭山"],
+[840,"啃果虫"],[841,"𬞟裹龙"],[842,"丰蜜龙"],[843,"沙包蛇"],[844,"沙螺蟒"],[845,"古月鸟"],
+[846,"刺梭鱼"],[847,"戽斗尖梭"],[848,"毒电婴"],[849,"颤弦蝾螈"],[850,"烧火蚣"],[851,"焚焰蚣"],
+[852,"拳拳蛸"],[853,"八爪武师"],[854,"来悲茶"],[855,"怖思壶"],[856,"迷布莉姆"],[857,"提布莉姆"],
+[858,"布莉姆温"],[859,"捣蛋小妖"],[860,"诈唬魔"],[861,"长毛巨魔"],[862,"堵拦熊"],[863,"喵头目"],
+[864,"魔灵珊瑚"],[865,"葱游兵"],[866,"踏冰人偶"],[867,"死神板"],[868,"小仙奶"],[869,"霜奶仙"],
+[870,"列阵兵"],[871,"啪嚓海胆"],[872,"雪吞虫"],[873,"雪绒蛾"],[874,"巨石丁"],[875,"冰砌鹅"],
+[876,"爱管侍"],[877,"莫鲁贝可"],[878,"铜象"],[879,"大王铜象"],[880,"雷鸟龙"],[881,"雷鸟海兽"],
+[882,"鳃鱼龙"],[883,"鳃鱼海兽"],[884,"铝钢龙"],[885,"多龙梅西亚"],[886,"多龙奇"],[887,"多龙巴鲁托"],
+[888,"苍响"],[889,"藏玛然特"],[890,"无极汰那"],[891,"熊徒弟"],[892,"武道熊师"],[893,"萨戮德"],
+[894,"雷吉艾勒奇"],[895,"雷吉铎拉戈"],[896,"雪暴马"],[897,"灵幽马"],[898,"蕾冠王"],
+[899,"诡角鹿"],[900,"劈斧螳螂"],[901,"月月熊"],[902,"幽尾玄鱼"],[903,"大狃拉"],[904,"万针鱼"],
+[905,"眷恋云"],
+// ── 第九世代 ──
+[906,"新叶喵"],[907,"蒂蕾喵"],[908,"魔幻假面喵"],[909,"呆火鳄"],[910,"炙烫鳄"],[911,"骨纹巨声鳄"],
+[912,"润水鸭"],[913,"涌跃鸭"],[914,"狂欢浪舞鸭"],[915,"爱吃豚"],[916,"飘香豚"],[917,"团珠蛛"],
+[918,"操陷蛛"],[919,"豆蟋蟀"],[920,"烈腿蝗"],[921,"布拨"],[922,"布土拨"],[923,"巴布土拨"],
+[924,"一对鼠"],[925,"一家鼠"],[926,"狗仔包"],[927,"麻花犬"],[928,"迷你芙"],[929,"奥利纽"],
+[930,"奥利瓦"],[931,"怒鹦哥"],[932,"盐石宝"],[933,"盐石垒"],[934,"盐石巨灵"],[935,"炭小侍"],
+[936,"红莲铠骑"],[937,"苍炎刃鬼"],[938,"光蚪仔"],[939,"电肚蛙"],[940,"电海燕"],[941,"大电海燕"],
+[942,"偶叫獒"],[943,"獒教父"],[944,"滋汁鼹"],[945,"涂标客"],[946,"纳噬草"],[947,"怖纳噬草"],
+[948,"原野水母"],[949,"陆地水母"],[950,"毛崖蟹"],[951,"热辣娃"],[952,"狠辣椒"],[953,"虫滚泥"],
+[954,"虫甲圣"],[955,"飘飘雏"],[956,"超能艳鸵"],[957,"小锻匠"],[958,"巧锻匠"],[959,"巨锻匠"],
+[960,"海地鼠"],[961,"三海地鼠"],[962,"下石鸟"],[963,"波普海豚"],[964,"海豚侠"],[965,"噗隆隆"],
+[966,"普隆隆姆"],[967,"摩托蜥"],[968,"拖拖蚓"],[969,"晶光芽"],[970,"晶光花"],[971,"墓仔狗"],
+[972,"墓扬犬"],[973,"缠红鹤"],[974,"走鲸"],[975,"浩大鲸"],[976,"轻身鳕"],[977,"吃吼霸"],
+[978,"米立龙"],[979,"弃世猴"],[980,"土王"],[981,"奇麒麟"],[982,"土龙节节"],[983,"仆斩将军"],
+[984,"雄伟牙"],[985,"吼叫尾"],[986,"猛恶菇"],[987,"振翼发"],[988,"爬地翅"],[989,"沙铁皮"],
+[990,"铁辙迹"],[991,"铁包袱"],[992,"铁臂膀"],[993,"铁脖颈"],[994,"铁毒蛾"],[995,"铁荆棘"],
+[996,"凉脊龙"],[997,"冻脊龙"],[998,"戟脊龙"],[999,"索财灵"],[1000,"赛富豪"],
+[1001,"古简蜗"],[1002,"古剑豹"],[1003,"古鼎鹿"],[1004,"古玉鱼"],[1005,"轰鸣月"],[1006,"铁武者"],
+[1007,"故勒顿"],[1008,"密勒顿"],[1009,"波荡水"],[1010,"铁斑叶"],[1011,"裹蜜虫"],[1012,"斯魔茶"],
+[1013,"来悲粗茶"],[1014,"够赞狗"],[1015,"愿增猿"],[1016,"吉雉鸡"],[1017,"厄鬼椪"],[1018,"铝钢桥龙"],
+[1019,"蜜集大蛇"],[1020,"破空焰"],[1021,"猛雷鼓"],[1022,"铁磐岩"],[1023,"铁头壳"],[1024,"太乐巴戈斯"],
+[1025,"桃歹郎"]
 ];
 
 // ════════════════════════════════════════
@@ -2090,6 +2221,14 @@ let shareGroups  = loadShareGroups();
 let activeShareGroup = null;
 let share = loadShare();
 
+// ════════════════════════════════════════
+//  Transit data  (在途，完全独立)
+// ════════════════════════════════════════
+const TK = 'muke_transit_v1';
+function loadTransit()  { try { return JSON.parse(localStorage.getItem(TK)) || []; } catch { return []; } }
+function saveTransit(d) { try { localStorage.setItem(TK, JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
+let transit = loadTransit();
+
 // Build/update a dex entry from a collection item (no price copied).
 // Images are shared via the same IDB keys — no duplication.
 function syncToDex(collItem) {
@@ -2103,8 +2242,10 @@ function syncToDex(collItem) {
     series:    collItem.series,
     pokedexNo: collItem.pokedexNo || lookupDexNo(collItem.name),
     imageKeys: [...(collItem.imageKeys || [null,null,null])],
-    addedAt:   idx >= 0 ? dex[idx].addedAt : Date.now(),
-    updatedAt: Date.now()
+    addedAt:      idx >= 0 ? dex[idx].addedAt : Date.now(),
+    updatedAt:    Date.now(),
+    dexGroupIds:  idx >= 0 ? (dex[idx].dexGroupIds  || []) : [],
+    dexImageKeys: idx >= 0 ? (dex[idx].dexImageKeys || []) : []
   };
   if (idx >= 0) dex[idx] = entry;
   else          dex.unshift(entry);
@@ -2162,23 +2303,27 @@ let activeTab = 'collection';
 
 function setTab(tab) {
   // exit any active multi-select
-  if (multiSelectMode)  cancelMultiSelect();
-  if (dexMultiMode)     cancelDexMultiSelect();
-  if (shareMultiMode)   cancelShareMultiSelect();
+  if (multiSelectMode)    cancelMultiSelect();
+  if (dexMultiMode)       cancelDexMultiSelect();
+  if (shareMultiMode)     cancelShareMultiSelect();
+  if (transitMultiMode)   cancelTransitMultiSelect();
   activeTab = tab;
   document.querySelectorAll('.main-tab').forEach(el =>
     el.classList.toggle('active', el.dataset.tab === tab));
-  document.getElementById('coll-section').style.display  = tab === 'collection' ? '' : 'none';
-  document.getElementById('dex-section').style.display   = tab === 'dex'   ? '' : 'none';
-  document.getElementById('share-section').style.display = tab === 'share' ? '' : 'none';
-  if (tab === 'dex')   renderDex();
-  if (tab === 'share') renderShare();
+  document.getElementById('coll-section').style.display    = tab === 'collection' ? '' : 'none';
+  document.getElementById('dex-section').style.display     = tab === 'dex'        ? '' : 'none';
+  document.getElementById('share-section').style.display   = tab === 'share'      ? '' : 'none';
+  document.getElementById('transit-section').style.display = tab === 'transit'    ? '' : 'none';
+  if (tab === 'dex')     renderDex();
+  if (tab === 'share')   renderShare();
+  if (tab === 'transit') renderTransit();
 }
 
 function updateTabBadges() {
-  document.getElementById('coll-badge').textContent   = coll.length;
-  document.getElementById('dex-badge').textContent    = dex.length;
-  document.getElementById('share-badge').textContent  = share.length;
+  document.getElementById('coll-badge').textContent    = coll.length;
+  document.getElementById('dex-badge').textContent     = dex.length;
+  document.getElementById('share-badge').textContent   = share.length;
+  document.getElementById('transit-badge').textContent = transit.length;
 }
 
 // ════════════════════════════════════════
@@ -2201,12 +2346,14 @@ function pokeBallSVG(sz) {
 // ════════════════════════════════════════
 //  Multi-select state
 // ════════════════════════════════════════
-let multiSelectMode  = false;   // collection
-let selectedIds      = new Set();
-let dexMultiMode     = false;   // dex
-let selectedDexIds   = new Set();
-let shareMultiMode   = false;   // share
-let selectedShareIds = new Set();
+let multiSelectMode     = false;   // collection
+let selectedIds         = new Set();
+let dexMultiMode        = false;   // dex
+let selectedDexIds      = new Set();
+let shareMultiMode      = false;   // share
+let selectedShareIds    = new Set();
+let transitMultiMode    = false;   // transit
+let selectedTransitIds  = new Set();
 let batchContext     = null;    // { target:'coll'|'dex', mode:'move'|'copy' }
 
 // ─── Toggle multi-select modes ───────────────────────────────────────────────
@@ -2303,10 +2450,17 @@ function updateMultiBar() {
   const countEl = document.getElementById('multi-bar-count');
   const actsEl  = document.getElementById('multi-bar-acts');
 
-  if (!multiSelectMode && !dexMultiMode && !shareMultiMode) { bar.classList.remove('on'); return; }
+  if (!multiSelectMode && !dexMultiMode && !shareMultiMode && !transitMultiMode) { bar.classList.remove('on'); return; }
   bar.classList.add('on');
 
-  if (shareMultiMode) {
+  if (transitMultiMode) {
+    const n = selectedTransitIds.size;
+    countEl.textContent = `已选 ${n} 件`;
+    actsEl.innerHTML =
+      `<button class="btn-mba" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;" ${!n?'disabled':''} onclick="batchMoveTransitToColl()">📬 移入收藏</button>
+       <button class="btn-mba btn-mba-del" ${!n?'disabled':''} onclick="batchConfirmTransitDel()">🗑 删除</button>
+       <button class="btn-mba btn-mba-cancel" onclick="cancelTransitMultiSelect()">取消</button>`;
+  } else if (shareMultiMode) {
     const n = selectedShareIds.size;
     countEl.textContent = `已选 ${n} 项`;
     const hasGrp = shareGroups.length > 0;
@@ -2727,11 +2881,13 @@ function renderDex() {
 }
 
 // ════════════════════════════════════════
-//  Collection Form Logic
+//  Collection / Transit Form Logic
 // ════════════════════════════════════════
+let formCtx = 'coll'; // 'coll' | 'transit' — controls where saveItem() writes
 let curFiles  = [null, null, null];
-let editingId = null;
-let viewingId = null;
+let editingId        = null;
+let viewingId        = null;
+let _editGroupDirty  = false;   // 用户是否在编辑表单里主动改过分组
 
 function triggerUpload(n) { document.getElementById(`fu-${n}`).click(); }
 
@@ -2959,7 +3115,8 @@ function openPriceBreakdown(item) {
 }
 
 function openAdd() {
-  editingId = null; curFiles = [null,null,null];
+  formCtx = 'coll';
+  editingId = null; curFiles = [null,null,null]; _editGroupDirty = false;
   document.getElementById('form-title').textContent = '添加新收藏';
   document.getElementById('f-name').value   = '';
   document.getElementById('f-series').value = '';
@@ -2971,9 +3128,28 @@ function openAdd() {
   formTags = []; renderFormTags();
   document.getElementById('f-dex-sync').checked = true;
   document.getElementById('f-dex-sync-row').style.display = '';  // 新增时显示
+  document.getElementById('f-group-fg').style.display = '';       // 收藏有分组
   [0,1,2].forEach(resetSlot);
   document.getElementById('form-ov').classList.add('on');
 }
+
+function openTransitAdd() {
+  formCtx = 'transit';
+  editingId = null; curFiles = [null,null,null]; _editGroupDirty = false;
+  document.getElementById('form-title').textContent = '📦 在途入库';
+  document.getElementById('f-name').value   = '';
+  document.getElementById('f-series').value = '';
+  document.getElementById('f-price').value  = '';
+  document.getElementById('f-qty').value    = '';
+  resetPriceBreakdown();
+  setBrandField(''); updateSeriesDL('');
+  formTags = []; renderFormTags();
+  document.getElementById('f-dex-sync-row').style.display = 'none'; // 在途不同步图鉴
+  document.getElementById('f-group-fg').style.display     = 'none'; // 在途无分组
+  [0,1,2].forEach(resetSlot);
+  document.getElementById('form-ov').classList.add('on');
+}
+
 function closeForm(e) {
   if (e && e.target !== document.getElementById('form-ov')) return;
   document.getElementById('form-ov').classList.remove('on');
@@ -3083,13 +3259,16 @@ function selectBankTag(tag) {
 // ════════════════════════════════════════
 //  Batch Tag Picker  (多选批量打标签)
 // ════════════════════════════════════════
-let batchTagSel = new Set();
+let batchTagSel  = new Set();
+let batchTagMode = 'add'; // 'add' | 'del'
 
 function openBatchTagPicker() {
   if (!selectedIds.size) return;
-  batchTagSel = new Set();
+  batchTagSel  = new Set();
+  batchTagMode = 'add';
   document.getElementById('batch-tag-new-inp').value = '';
   document.getElementById('batch-tag-status').textContent = '';
+  _applyBatchTagModeUI();
   renderBatchTagChips();
   updateBatchTagApplyBtn();
   document.getElementById('batch-tag-ov').classList.add('on');
@@ -3098,19 +3277,70 @@ function closeBatchTagPicker(e) {
   if (e && e.target !== document.getElementById('batch-tag-ov')) return;
   document.getElementById('batch-tag-ov').classList.remove('on');
 }
+
+// 切换添加 / 删除模式
+function setBatchTagMode(mode) {
+  if (batchTagMode === mode) return;
+  batchTagMode = mode;
+  batchTagSel  = new Set(); // 切换时清空选择
+  _applyBatchTagModeUI();
+  renderBatchTagChips();
+  updateBatchTagApplyBtn();
+}
+function _applyBatchTagModeUI() {
+  const addTab = document.getElementById('btab-add');
+  const delTab = document.getElementById('btab-del');
+  const desc   = document.getElementById('batch-tag-desc');
+  const newRow = document.getElementById('batch-tag-new-row');
+  const btn    = document.getElementById('batch-tag-apply-btn');
+  if (batchTagMode === 'add') {
+    addTab.classList.add('tab-add-active');    addTab.classList.remove('tab-del-active');
+    delTab.classList.remove('tab-add-active'); delTab.classList.remove('tab-del-active');
+    desc.textContent = '选择要加到已选毛绒的标签（可多选，不超出每件5个上限）';
+    newRow.style.display = '';
+    btn.classList.remove('del-btn');
+  } else {
+    addTab.classList.remove('tab-add-active'); addTab.classList.remove('tab-del-active');
+    delTab.classList.remove('tab-add-active'); delTab.classList.add('tab-del-active');
+    desc.textContent = '选择要从已选毛绒中删除的标签（仅显示这批毛绒拥有的标签）';
+    newRow.style.display = 'none';
+    btn.classList.add('del-btn');
+  }
+}
+
 function renderBatchTagChips() {
   const el = document.getElementById('batch-tag-chips');
   if (!el) return;
-  const sorted = [...tagBank];  // preserve custom order
-  if (!sorted.length) {
-    el.innerHTML = '<span style="font-size:12px;color:var(--muted)">还没有历史标签，在下方输入新标签</span>';
-    return;
+
+  let tags;
+  if (batchTagMode === 'del') {
+    // 只展示已选藏品中实际存在的标签（按 tagBank 顺序排列）
+    const selItems = coll.filter(i => selectedIds.has(i.id));
+    const presentSet = new Set();
+    selItems.forEach(i => (i.tags || []).forEach(t => presentSet.add(t)));
+    tags = [...tagBank].filter(t => presentSet.has(t));
+    // tagBank 外的标签也追加（兜底）
+    presentSet.forEach(t => { if (!tags.includes(t)) tags.push(t); });
+    if (!tags.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:12px 0">已选毛绒没有任何标签</div>';
+      return;
+    }
+  } else {
+    tags = [...tagBank];
+    if (!tags.length) {
+      el.innerHTML = '<span style="font-size:12px;color:var(--muted)">还没有历史标签，在下方输入新标签</span>';
+      return;
+    }
   }
-  el.innerHTML = sorted.map(t =>
-    `<span class="batch-tag-opt${batchTagSel.has(t) ? ' sel' : ''}" onclick="toggleBatchTag('${t.replace(/'/g,"\\'")}')">
+
+  const isDel = batchTagMode === 'del';
+  el.innerHTML = tags.map(t => {
+    const selCls = batchTagSel.has(t) ? (isDel ? ' sel-del' : ' sel') : '';
+    const modeCls = isDel ? ' del-mode' : '';
+    return `<span class="batch-tag-opt${selCls}${modeCls}" onclick="toggleBatchTag('${t.replace(/'/g,"\\'")}')">
       ${esc(t)}
-    </span>`
-  ).join('');
+    </span>`;
+  }).join('');
 }
 function toggleBatchTag(tag) {
   if (batchTagSel.has(tag)) batchTagSel.delete(tag);
@@ -3133,26 +3363,52 @@ function updateBatchTagApplyBtn() {
   const n = selectedIds.size, m = batchTagSel.size;
   if (!btn) return;
   btn.disabled = !m;
-  btn.textContent = m ? `为已选 ${n} 件添加「${[...batchTagSel].join('」「')}」` : '请先选择标签';
+  if (batchTagMode === 'del') {
+    btn.textContent = m
+      ? `从已选 ${n} 件中删除「${[...batchTagSel].join('」「')}」`
+      : '请先选择要删除的标签';
+  } else {
+    btn.textContent = m
+      ? `为已选 ${n} 件添加「${[...batchTagSel].join('」「')}」`
+      : '请先选择标签';
+  }
 }
 function applyBatchTags() {
   if (!batchTagSel.size || !selectedIds.size) return;
-  const toAdd = [...batchTagSel];
-  let n = 0;
-  coll.forEach(item => {
-    if (!selectedIds.has(item.id)) return;
-    const tags = item.tags ? [...item.tags] : [];
-    let changed = false;
-    toAdd.forEach(t => {
-      if (!tags.includes(t) && tags.length < MAX_TAGS) { tags.push(t); changed = true; }
+
+  if (batchTagMode === 'del') {
+    // ── 删除模式 ──
+    const toDel = [...batchTagSel];
+    let n = 0;
+    coll.forEach(item => {
+      if (!selectedIds.has(item.id)) return;
+      const before = (item.tags || []).length;
+      item.tags = (item.tags || []).filter(t => !toDel.includes(t));
+      if (item.tags.length !== before) { item.updatedAt = Date.now(); n++; }
     });
-    if (changed) { item.tags = tags; item.updatedAt = Date.now(); n++; }
-  });
-  saveData(coll);
-  addToTagBank(toAdd);
-  document.getElementById('batch-tag-ov').classList.remove('on');
-  cancelMultiSelect();
-  toast(`✅ 已为 ${n} 件添加标签`);
+    saveData(coll);
+    document.getElementById('batch-tag-ov').classList.remove('on');
+    cancelMultiSelect();
+    toast(`🗑 已从 ${n} 件中移除标签「${toDel.join('」「')}」`);
+  } else {
+    // ── 添加模式 ──
+    const toAdd = [...batchTagSel];
+    let n = 0;
+    coll.forEach(item => {
+      if (!selectedIds.has(item.id)) return;
+      const tags = item.tags ? [...item.tags] : [];
+      let changed = false;
+      toAdd.forEach(t => {
+        if (!tags.includes(t) && tags.length < MAX_TAGS) { tags.push(t); changed = true; }
+      });
+      if (changed) { item.tags = tags; item.updatedAt = Date.now(); n++; }
+    });
+    saveData(coll);
+    addToTagBank(toAdd);
+    document.getElementById('batch-tag-ov').classList.remove('on');
+    cancelMultiSelect();
+    toast(`✅ 已为 ${n} 件添加标签`);
+  }
 }
 
 // ════════════════════════════════════════
@@ -3486,7 +3742,6 @@ async function saveItem() {
   const name    = document.getElementById('f-name').value.trim();
   const brand   = getBrand();
   const series  = document.getElementById('f-series').value.trim();
-  const groupId = document.getElementById('f-group').value || null;
   const qtyRaw  = document.getElementById('f-qty').value;
   const qty     = qtyRaw === '' ? null : Math.max(1, parseInt(qtyRaw, 10) || 1);
 
@@ -3507,10 +3762,12 @@ async function saveItem() {
   if (!name)  { toast('⚠️ 请填写宝可梦名称'); return; }
   if (!brand) { toast('⚠️ 请填写品牌名称'); return; }
 
-  const isEdit   = !!editingId;
-  const id       = editingId || ('p_'+Date.now()+'_'+Math.random().toString(36).slice(2,6));
-  const existing = isEdit ? coll.find(i=>i.id===id) : null;
-  const oldKeys  = existing?.imageKeys || [null,null,null];
+  const isTransit = formCtx === 'transit';
+  const isEdit    = !!editingId;
+  const id        = editingId || ((isTransit ? 't_' : 'p_') + Date.now() + '_' + Math.random().toString(36).slice(2,6));
+  const arr       = isTransit ? transit : coll;
+  const existing  = isEdit ? arr.find(i=>i.id===id) : null;
+  const oldKeys   = existing?.imageKeys || [null,null,null];
 
   const newKeys = [...oldKeys];
   for (let n=0; n<3; n++) {
@@ -3523,29 +3780,45 @@ async function saveItem() {
     }
   }
 
+  const newDexNo = lookupDexNo(name);
   const item = {
     id, name, brand, series,
-    pokedexNo: lookupDexNo(name),
+    pokedexNo: newDexNo !== null ? newDexNo : (existing?.pokedexNo ?? null),
     price: priceRaw === '' ? 0 : (parseFloat(priceRaw)||0),
-    priceBreakdown,
-    qty,
-    imageKeys: newKeys, groupId,
+    priceBreakdown, qty,
+    imageKeys: newKeys,
     tags: [...formTags],
     notes: existing?.notes || '',
     createdAt: existing?.createdAt || Date.now(),
     updatedAt: Date.now()
   };
 
-  if (isEdit) { const idx=coll.findIndex(i=>i.id===id); if(idx!==-1) coll[idx]=item; }
-  else        { coll.unshift(item); }
-
-  saveData(coll);
-  addToTagBank(item.tags || []);   // 记住用过的标签
-  if (document.getElementById('f-dex-sync').checked) syncToDex(item);
-  render();
-  if (activeTab === 'dex') renderDex();
-  document.getElementById('form-ov').classList.remove('on');
-  toast(isEdit ? '✅ 已更新' : '🎉 已添加到收藏！');
+  if (isTransit) {
+    // ── 在途：无分组、无图鉴同步 ──
+    if (isEdit) { const idx=transit.findIndex(i=>i.id===id); if(idx!==-1) transit[idx]=item; }
+    else        { transit.unshift(item); }
+    saveTransit(transit);
+    addToTagBank(item.tags || []);
+    renderTransit();
+    document.getElementById('form-ov').classList.remove('on');
+    toast(isEdit ? '✅ 已更新' : '📦 已添加到在途！');
+  } else {
+    // ── 收藏：含分组策略 + 可选图鉴同步 ──
+    const formGroupId = document.getElementById('f-group').value || null;
+    const groupId = isEdit && !_editGroupDirty
+      ? (existing?.groupId ?? null)
+      : formGroupId;
+    item.groupId = groupId;
+    if (isEdit) { const idx=coll.findIndex(i=>i.id===id); if(idx!==-1) coll[idx]=item; }
+    else        { coll.unshift(item); }
+    saveData(coll);
+    addToTagBank(item.tags || []);
+    if (document.getElementById('f-dex-sync').checked) syncToDex(item);
+    render();
+    if (activeTab === 'dex') renderDex();
+    document.getElementById('form-ov').classList.remove('on');
+    toast(isEdit ? '✅ 已更新' : '🎉 已添加到收藏！');
+  }
 }
 
 // ════════════════════════════════════════
@@ -3622,7 +3895,8 @@ function editCurrent() {
   const item = coll.find(i=>i.id===viewingId);
   if (!item) return;
   document.getElementById('det-ov').classList.remove('on');
-  editingId = viewingId; curFiles = [null,null,null];
+  formCtx = 'coll';
+  editingId = viewingId; curFiles = [null,null,null]; _editGroupDirty = false;
   document.getElementById('form-title').textContent = '编辑收藏';
   document.getElementById('f-name').value   = item.name;
   document.getElementById('f-series').value = item.series||'';
@@ -3632,7 +3906,9 @@ function editCurrent() {
   setBrandField(item.brand||''); updateSeriesDL(item.brand||'');
   updateGroupSel(); document.getElementById('f-group').value = item.groupId||'';
   formTags = [...(item.tags||[])]; renderFormTags();
+  _editGroupDirty = false;
   document.getElementById('f-dex-sync-row').style.display = 'none'; // 编辑时隐藏同步开关
+  document.getElementById('f-group-fg').style.display = '';          // 收藏有分组
   [0,1,2].forEach(resetSlot);
   (item.imageKeys||[]).forEach(async(k,n)=>{
     if(!k) return; const url=await getURL(k); if(url) showSlot(n,url);
@@ -4041,9 +4317,11 @@ async function doBatchDeleteDex() {
 
 async function doDelete() {
   if (confMode === 'initManualOrder') { confirmInitManualOrder(); return; }
-  if (confMode === 'batchColl')  { await doBatchDeleteColl();  return; }
-  if (confMode === 'batchDex')   { await doBatchDeleteDex();   return; }
-  if (confMode === 'batchShare') { await doBatchDeleteShare(); return; }
+  if (confMode === 'batchColl')    { await doBatchDeleteColl();    return; }
+  if (confMode === 'batchDex')     { await doBatchDeleteDex();     return; }
+  if (confMode === 'batchShare')   { await doBatchDeleteShare();   return; }
+  if (confMode === 'transit')      { await doDeleteTransit();      return; }
+  if (confMode === 'batchTransit') { await doBatchDeleteTransit(); return; }
   if (confMode === 'dex')       { await doDeleteDex();        return; }
   if (confMode === 'share')     { await doDeleteShare();      return; }
   if (confMode === 'clearData') { await doClearAllData();     return; }
@@ -4191,6 +4469,9 @@ function openBackup() {
   document.getElementById('backup-confirm-view').style.display = 'none';
   document.getElementById('import-file-input').value = '';
   _pendingImportData = null;
+  // Show/hide transit option based on setting
+  const transitLabel = document.getElementById('exp-transit-label');
+  if (transitLabel) transitLabel.style.display = appSettings.showTransit ? '' : 'none';
   // Populate group filter selects
   const mkOpts = (arr, label) =>
     `<option value="">全部${label}（不筛选）</option>` +
@@ -4216,11 +4497,12 @@ function blobToBase64(blob) {
 }
 
 async function doExport() {
-  const btn      = document.getElementById('export-btn');
-  const expColl  = document.getElementById('exp-cb-coll')?.checked  !== false;
-  const expDex   = document.getElementById('exp-cb-dex')?.checked   !== false;
-  const expShare = document.getElementById('exp-cb-share')?.checked !== false;
-  if (!expColl && !expDex && !expShare) { toast('⚠️ 请至少勾选一项'); return; }
+  const btn         = document.getElementById('export-btn');
+  const expTransit  = document.getElementById('exp-cb-transit')?.checked && appSettings.showTransit;
+  const expColl     = document.getElementById('exp-cb-coll')?.checked  !== false;
+  const expDex      = document.getElementById('exp-cb-dex')?.checked   !== false;
+  const expShare    = document.getElementById('exp-cb-share')?.checked !== false;
+  if (!expTransit && !expColl && !expDex && !expShare) { toast('⚠️ 请至少勾选一项'); return; }
   btn.disabled = true;
   btn.textContent = '⏳ 正在打包图片…';
   try {
@@ -4228,6 +4510,7 @@ async function doExport() {
     const collGrpF  = document.getElementById('exp-coll-grp')?.value  || '';
     const dexGrpF   = document.getElementById('exp-dex-grp')?.value   || '';
     const shareGrpF = document.getElementById('exp-share-grp')?.value || '';
+    const outTransit   = expTransit ? transit : [];
     const outColl      = expColl  ? (collGrpF  ? coll.filter(i => i.groupId === collGrpF)                                : coll)      : [];
     const outGroups    = expColl  ? (collGrpF  ? groups.filter(g => g.id === collGrpF)                                  : groups)    : [];
     const outDex       = expDex   ? (dexGrpF   ? dex.filter(d => (d.dexGroupIds||[]).includes(dexGrpF))                 : dex)       : [];
@@ -4237,6 +4520,7 @@ async function doExport() {
 
     // Collect IDB keys for selected data
     const keySet = new Set();
+    outTransit.forEach(i => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
     outColl.forEach(i  => (i.imageKeys||[]).forEach(k => k && keySet.add(k)));
     outDex.forEach(d   => {
       (d.imageKeys||[]).forEach(k => k && keySet.add(k));
@@ -4253,20 +4537,25 @@ async function doExport() {
       btn.textContent = `⏳ 打包中 ${done}/${keySet.size}…`;
     }
 
-    const scopeParts = [expColl&&'收藏', expDex&&'图鉴', expShare&&'分享'].filter(Boolean);
+    const nameMap = { 在途:'transit', 收藏:'coll', 图鉴:'dex', 分享:'share' };
+    const scopeParts = [expTransit&&'在途', expColl&&'收藏', expDex&&'图鉴', expShare&&'分享'].filter(Boolean);
     const scopeLabel = scopeParts.join('+');
-    const scopeKey   = (expColl&&expDex&&expShare) ? 'all' : scopeParts.map(s=>({收藏:'coll',图鉴:'dex',分享:'share'}[s])).join('-');
+    const scopeKey   = (expTransit&&expColl&&expDex&&expShare) ? 'all'
+      : !expTransit&&expColl&&expDex&&expShare ? 'all-notransit'
+      : scopeParts.map(s => nameMap[s]).join('-');
     const payload = {
       version:    2,
       appName:    '木可的毛绒收藏工具',
       exportScope: scopeKey,
       exportedAt: new Date().toISOString(),
       counts: {
+        transit: outTransit.length,
         collection: outColl.length, dex: outDex.length,
         groups: outGroups.length, dexGroups: outDexGroups.length,
         share: outShare.length, shareGroups: outShareGrps.length,
         images: Object.keys(images).length
       },
+      transit:    outTransit,
       collection: outColl,
       dex:        outDex,
       groups:     outGroups,
@@ -4310,10 +4599,11 @@ function onImportFileSelected(event) {
     try {
       const data = JSON.parse(e.target.result);
       // Accept both full backups and single-scope backups (must have at least one array)
-      const hasColl  = Array.isArray(data.collection);
-      const hasDex   = Array.isArray(data.dex);
-      const hasShare = Array.isArray(data.share);
-      if (!data.version || (!hasColl && !hasDex && !hasShare)) {
+      const hasTransit = Array.isArray(data.transit);
+      const hasColl    = Array.isArray(data.collection);
+      const hasDex     = Array.isArray(data.dex);
+      const hasShare   = Array.isArray(data.share);
+      if (!data.version || (!hasTransit && !hasColl && !hasDex && !hasShare)) {
         toast('⚠️ 不是有效的备份文件'); return;
       }
       _pendingImportData = data;
@@ -4321,21 +4611,24 @@ function onImportFileSelected(event) {
       const imgCnt     = data.images ? Object.keys(data.images).length : 0;
       const exportDate = data.exportedAt
         ? new Date(data.exportedAt).toLocaleString('zh-CN') : '未知';
-      const scopeLabel = { all:'全部', coll:'收藏', dex:'图鉴', share:'分享' }[data.exportScope] || '全部';
+      const scopeLabelMap = { all:'全部', 'all-notransit':'全部（不含在途）', coll:'收藏', dex:'图鉴', share:'分享', transit:'在途' };
+      const scopeLabel = scopeLabelMap[data.exportScope] || data.exportScope || '全部';
 
       // Build file info
       let infoHtml = `<b>备份时间：</b>${exportDate}<br><b>导出范围：</b>${scopeLabel}<br>`;
-      if (hasColl)  infoHtml += `<b>收藏数量：</b>${data.collection.length} 件 · 收藏分组 ${(data.groups||[]).length} 个<br>`;
-      if (hasDex)   infoHtml += `<b>图鉴条目：</b>${data.dex.length} 个 · 图鉴分组 ${(data.dexGroups||[]).length} 个<br>`;
-      if (hasShare) infoHtml += `<b>分享条目：</b>${data.share.length} 项 · 分享分组 ${(data.shareGroups||[]).length} 个<br>`;
+      if (hasTransit) infoHtml += `<b>在途数量：</b>${data.transit.length} 件<br>`;
+      if (hasColl)    infoHtml += `<b>收藏数量：</b>${data.collection.length} 件 · 收藏分组 ${(data.groups||[]).length} 个<br>`;
+      if (hasDex)     infoHtml += `<b>图鉴条目：</b>${data.dex.length} 个 · 图鉴分组 ${(data.dexGroups||[]).length} 个<br>`;
+      if (hasShare)   infoHtml += `<b>分享条目：</b>${data.share.length} 项 · 分享分组 ${(data.shareGroups||[]).length} 个<br>`;
       infoHtml += `<b>图片数量：</b>${imgCnt} 张 · <b>文件大小：</b>${(file.size/1024/1024).toFixed(2)} MB`;
       document.getElementById('backup-file-info').innerHTML = infoHtml;
 
       // Build scope checkboxes (only show what's in the file)
       let cbHtml = '';
-      if (hasColl)  cbHtml += `<label><input type="checkbox" id="imp-cb-coll"  checked> 收藏（${data.collection.length} 件）</label>`;
-      if (hasDex)   cbHtml += `<label><input type="checkbox" id="imp-cb-dex"   checked> 图鉴（${data.dex.length} 个）</label>`;
-      if (hasShare) cbHtml += `<label><input type="checkbox" id="imp-cb-share" checked> 分享（${data.share.length} 项）</label>`;
+      if (hasTransit) cbHtml += `<label><input type="checkbox" id="imp-cb-transit" checked> 在途（${data.transit.length} 件）</label>`;
+      if (hasColl)    cbHtml += `<label><input type="checkbox" id="imp-cb-coll"    checked> 收藏（${data.collection.length} 件）</label>`;
+      if (hasDex)     cbHtml += `<label><input type="checkbox" id="imp-cb-dex"     checked> 图鉴（${data.dex.length} 个）</label>`;
+      if (hasShare)   cbHtml += `<label><input type="checkbox" id="imp-cb-share"   checked> 分享（${data.share.length} 项）</label>`;
       document.getElementById('imp-scope-row').innerHTML = cbHtml;
 
       document.getElementById('backup-main-view').style.display   = 'none';
@@ -4366,22 +4659,24 @@ async function doImport() {
   const data = _pendingImportData;
   if (!data) return;
   const btn  = document.getElementById('do-import-btn');
-  const mode = document.querySelector('input[name="imp-mode"]:checked')?.value || 'replace';
-  const doColl  = !!document.getElementById('imp-cb-coll')?.checked;
-  const doDex   = !!document.getElementById('imp-cb-dex')?.checked;
-  const doShare = !!document.getElementById('imp-cb-share')?.checked;
-  if (!doColl && !doDex && !doShare) { toast('⚠️ 请至少勾选一项'); return; }
+  const mode     = document.querySelector('input[name="imp-mode"]:checked')?.value || 'replace';
+  const doTransit = !!document.getElementById('imp-cb-transit')?.checked;
+  const doColl    = !!document.getElementById('imp-cb-coll')?.checked;
+  const doDex     = !!document.getElementById('imp-cb-dex')?.checked;
+  const doShare   = !!document.getElementById('imp-cb-share')?.checked;
+  if (!doTransit && !doColl && !doDex && !doShare) { toast('⚠️ 请至少勾选一项'); return; }
 
   btn.disabled = true; btn.textContent = '⏳ 导入中…';
   try {
     // Restore images (only keys referenced by selected data)
     const neededKeys = new Set();
-    if (doColl)  (data.collection||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
-    if (doDex)   (data.dex||[]).forEach(d => {
+    if (doTransit) (data.transit||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
+    if (doColl)    (data.collection||[]).forEach(i => (i.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
+    if (doDex)     (data.dex||[]).forEach(d => {
       (d.imageKeys||[]).forEach(k    => k && neededKeys.add(k));
       (d.dexImageKeys||[]).forEach(k => k && neededKeys.add(k)); // 图鉴独立照片
     });
-    if (doShare) (data.share||[]).forEach(s => (s.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
+    if (doShare)   (data.share||[]).forEach(s => (s.imageKeys||[]).forEach(k => k && neededKeys.add(k)));
     const images  = data.images || {};
     const imgKeys = [...neededKeys].filter(k => images[k]);
     for (let i = 0; i < imgKeys.length; i++) {
@@ -4402,6 +4697,9 @@ async function doImport() {
       }
     }
 
+    if (doTransit) {
+      applyData(TK, data.transit || []);
+    }
     if (doColl) {
       applyData(SK,  data.collection || []);
       applyData(GK,  data.groups     || []);
@@ -4441,7 +4739,7 @@ function toast(msg) {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  ['form-ov','det-ov','dex-det-ov','dex-form-ov','grp-ov','dex-grp-ov','dex-assign-ov','backup-ov','batch-grp-ov','conf-ov','tag-mgmt-ov','share-det-ov','share-form-ov','share-import-ov','sgrp-ov'].forEach(id =>
+  ['form-ov','det-ov','transit-det-ov','dex-det-ov','dex-form-ov','grp-ov','dex-grp-ov','dex-assign-ov','backup-ov','batch-grp-ov','conf-ov','tag-mgmt-ov','share-det-ov','share-form-ov','share-import-ov','sgrp-ov'].forEach(id =>
     document.getElementById(id)?.classList.remove('on'));
 });
 
@@ -5110,9 +5408,36 @@ function deleteShareGroup(id) {
 // ════════════════════════════════════════
 //  Bootstrap
 // ════════════════════════════════════════
+
+// 补全历史条目的 pokedexNo：旧版本或 POKEDEX 更新前添加的条目可能因查不到名称而存了 null，
+// 但现在数据库已覆盖，启动时统一回填，保证默认排序按图鉴号正确排列。
+function backfillPokedexNos() {
+  // 修正两类问题：
+  // 1. pokedexNo 为 null（条目加入时名称不在旧图鉴中）
+  // 2. pokedexNo 存了错误值（旧图鉴名称→编号映射与新图鉴不同，如旧 #394="波加曼"→新 #393="波加曼"）
+  let collChanged = false;
+  for (const item of coll) {
+    const correct = lookupDexNo(item.name);
+    if (correct !== null && item.pokedexNo !== correct) {
+      item.pokedexNo = correct; collChanged = true;
+    }
+  }
+  if (collChanged) saveData(coll);
+
+  let dexChanged = false;
+  for (const entry of dex) {
+    const correct = lookupDexNo(entry.name);
+    if (correct !== null && entry.pokedexNo !== correct) {
+      entry.pokedexNo = correct; dexChanged = true;
+    }
+  }
+  if (dexChanged) saveDex(dex);
+}
+
 applySettings(); // 先应用设置（避免闪烁）
 initDB().then(async () => {
   await migrateOldData();
+  backfillPokedexNos(); // 补全缺失的 pokedexNo（历史条目 & POKEDEX 更新后）
   syncAllToDex();   // back-fill dex with existing collection items
   render();
 }).catch(e => {
@@ -5173,11 +5498,351 @@ async function doClearAllData() {
 }
 
 // ════════════════════════════════════════
+//  Transit — Render
+// ════════════════════════════════════════
+function transitFilteredSorted() {
+  const q    = document.getElementById('transit-q').value.toLowerCase();
+  const sort = document.getElementById('transit-sort').value;
+  let items  = [...transit];
+  if (q) items = items.filter(i =>
+    i.name.toLowerCase().includes(q) ||
+    (i.brand||'').toLowerCase().includes(q) ||
+    (i.series||'').toLowerCase().includes(q)
+  );
+  if (sort === 'manual') {
+    const order = loadManualOrder(TRANSIT_ORDER_KEY);
+    if (order) {
+      const orderMap = new Map(order.map((id, i) => [id, i]));
+      items.sort((a, b) => {
+        const ia = orderMap.has(a.id) ? orderMap.get(a.id) : 1e9;
+        const ib = orderMap.has(b.id) ? orderMap.get(b.id) : 1e9;
+        return ia - ib;
+      });
+    } else { items.sort(collSortComparator('default')); }
+  } else { items.sort(collSortComparator(sort)); }
+  return items;
+}
+
+function renderTransit() {
+  if (activeTab !== 'transit') return; // only render when visible
+  const items = transitFilteredSorted();
+  const grid  = document.getElementById('transit-grid');
+  document.getElementById('transit-count-label').textContent = `在途共 ${transit.length} 件`;
+  updateTabBadges();
+
+  const isManual = document.getElementById('transit-sort').value === 'manual';
+  grid.classList.toggle('multi-sel', transitMultiMode);
+  grid.classList.toggle('sort-manual', isManual);
+
+  if (!items.length) {
+    const isFiltered = document.getElementById('transit-q').value;
+    grid.innerHTML = `<div class="empty">
+      <div class="e-icon">${pokeBallSVG(80)}</div>
+      <h3>${isFiltered ? '没有找到匹配的在途记录' : '还没有在途记录'}</h3>
+      <p>${isFiltered ? '试试修改搜索条件' : '点击「在途入库」记录快递中的藏品'}</p>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = items.map(item => {
+    const sel   = selectedTransitIds.has(item.id);
+    const dragA = isManual
+      ? ` draggable="true" ondragstart="onDragStart(event,'${item.id}','transit')" ondragover="onDragOver(event,'${item.id}','transit')" ondrop="onDrop(event,'${item.id}','transit')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${item.id}','transit')" ontouchmove="onTouchMove(event,'transit')" ontouchend="onTouchEnd(event,'transit')"`
+      : '';
+    return `
+    <div class="card${sel?' card-selected':''}" onclick="transitCardClick('${item.id}')" data-card-id="${item.id}"${dragA}>
+      <div class="card-sel-badge${sel?' checked':''}">✓</div>
+      <div class="c-img" data-triid="${item.id}">${pokeBallSVG(60)}</div>
+      <div class="c-body">
+        <div class="c-name">${esc(item.name)}</div>
+        <div class="c-sub">${esc(item.brand||'品牌未填')}${item.series?' · '+esc(item.series):''}</div>
+        <div class="c-price">${item.price ? '¥'+fmt(item.price) : ''}</div>
+        ${item.qty!=null?`<div class="c-qty-badge">📦 ×${item.qty}</div>`:''}
+        ${(item.tags&&item.tags.length)?`<div class="c-tags">${sortTagsByOrder(item.tags).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  items.forEach(async item => {
+    const keys = item.imageKeys || [];
+    if (!keys[0]) return;
+    const url = await getURL(keys[0]);
+    if (!url) return;
+    const el = document.querySelector(`.c-img[data-triid="${item.id}"]`);
+    if (el) el.innerHTML = `<img src="${url}" alt="${esc(item.name)}" loading="lazy">`;
+  });
+}
+
+// ════════════════════════════════════════
+//  Transit — Multiselect
+// ════════════════════════════════════════
+function toggleTransitMultiSelect() {
+  transitMultiMode = !transitMultiMode;
+  selectedTransitIds.clear();
+  document.getElementById('transit-multisel-btn').classList.toggle('active', transitMultiMode);
+  document.getElementById('transit-selall-row').style.display = transitMultiMode ? '' : 'none';
+  document.getElementById('transit-grid').classList.toggle('multi-sel', transitMultiMode);
+  updateMultiBar();
+  renderTransit();
+}
+function cancelTransitMultiSelect() {
+  transitMultiMode = false; selectedTransitIds.clear();
+  document.getElementById('transit-multisel-btn').classList.remove('active');
+  document.getElementById('transit-selall-row').style.display = 'none';
+  document.getElementById('transit-selall-btn').textContent = '全选';
+  document.getElementById('transit-grid').classList.remove('multi-sel');
+  updateMultiBar(); renderTransit();
+}
+function toggleTransitItemSelect(id) {
+  if (selectedTransitIds.has(id)) selectedTransitIds.delete(id);
+  else selectedTransitIds.add(id);
+  updateMultiBar(); renderTransit();
+}
+function transitSelectAll() {
+  const items = transitFilteredSorted();
+  const allSel = items.length > 0 && items.every(i => selectedTransitIds.has(i.id));
+  if (allSel) items.forEach(i => selectedTransitIds.delete(i.id));
+  else        items.forEach(i => selectedTransitIds.add(i.id));
+  document.getElementById('transit-selall-btn').textContent = allSel ? '全选' : '取消全选';
+  updateMultiBar(); renderTransit();
+}
+function transitCardClick(id) {
+  if (transitMultiMode) toggleTransitItemSelect(id);
+  else openTransitDetail(id);
+}
+
+// ════════════════════════════════════════
+//  Transit — Detail Modal
+// ════════════════════════════════════════
+let viewingTransitId      = null;
+let _transitDetThumbURLs  = [];
+
+async function openTransitDetail(id) {
+  const item = transit.find(i => i.id === id);
+  if (!item) return;
+  viewingTransitId = id;
+
+  const keys = item.imageKeys || [null,null,null];
+  _transitDetThumbURLs = [];
+  const urls = await Promise.all(keys.map(k => getURL(k)));
+  urls.forEach(u => { if(u) _transitDetThumbURLs.push(u); });
+
+  const gallery = document.getElementById('transit-det-gallery');
+  if (!_transitDetThumbURLs.length) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img">${pokeBallSVG(90)}</div>`;
+  } else if (_transitDetThumbURLs.length === 1) {
+    gallery.className = 'det-gallery';
+    gallery.innerHTML = `<div class="det-main-img"><img src="${_transitDetThumbURLs[0]}" alt=""></div>`;
+  } else {
+    gallery.className = 'det-gallery multi';
+    let html = `<div class="det-main-img" id="transit-det-main-img"><img src="${_transitDetThumbURLs[0]}" alt=""></div>`;
+    for (let i=0; i<_transitDetThumbURLs.length; i++) {
+      html += `<div class="det-thumb ${i===0?'active':''}" onclick="switchTransitThumb(${i})"><img src="${_transitDetThumbURLs[i]}" alt=""></div>`;
+    }
+    gallery.innerHTML = html;
+  }
+
+  document.getElementById('transit-det-name').textContent   = item.name;
+  document.getElementById('transit-det-brand').textContent  = item.brand||'品牌未填';
+  const bd = item.priceBreakdown;
+  const priceLabel  = item.price ? '¥'+fmt(item.price) : '—';
+  const priceDetail = bd
+    ? ` <span style="font-size:11px;color:var(--muted);font-weight:400">(本体¥${fmt(bd.base)}${bd.ship?'+运¥'+fmt(bd.ship):''}${bd.other?'+其他¥'+fmt(bd.other):''})</span>`
+    : '';
+  document.getElementById('transit-det-price').innerHTML  = priceLabel + priceDetail;
+  document.getElementById('transit-det-series').textContent = item.series||'—';
+  const qtyCell = document.getElementById('transit-det-qty-cell');
+  if (item.qty != null) {
+    document.getElementById('transit-det-qty').textContent = `×${item.qty}`;
+    qtyCell.style.display = '';
+  } else { qtyCell.style.display = 'none'; }
+
+  const tagsSection = document.getElementById('transit-det-tags-section');
+  const tagsRow     = document.getElementById('transit-det-tags-row');
+  if (item.tags && item.tags.length) {
+    tagsSection.style.display = '';
+    tagsRow.innerHTML = sortTagsByOrder(item.tags).map(t => `<span class="det-tag">${esc(t)}</span>`).join('');
+  } else { tagsSection.style.display = 'none'; }
+
+  const noteTa   = document.getElementById('transit-det-notes-ta');
+  const noteHint = document.getElementById('transit-det-notes-hint');
+  if (noteTa)   noteTa.value = item.notes || '';
+  if (noteHint) { noteHint.textContent = '修改后失去焦点自动保存'; noteHint.classList.remove('saved'); }
+
+  document.getElementById('transit-det-ov').classList.add('on');
+}
+function switchTransitThumb(i) {
+  document.getElementById('transit-det-main-img').innerHTML = `<img src="${_transitDetThumbURLs[i]}" alt="">`;
+  document.querySelectorAll('#transit-det-gallery .det-thumb').forEach((el,idx) => el.classList.toggle('active', idx===i));
+}
+function closeTransitDet(e) {
+  if (e && e.target !== document.getElementById('transit-det-ov')) return;
+  document.getElementById('transit-det-ov').classList.remove('on');
+}
+function onTransitNotesInput() {
+  const hint = document.getElementById('transit-det-notes-hint');
+  if (hint) { hint.textContent = '修改后失去焦点自动保存'; hint.classList.remove('saved'); }
+}
+function saveTransitNotes() {
+  const item = transit.find(i => i.id === viewingTransitId);
+  if (!item) return;
+  const val = document.getElementById('transit-det-notes-ta').value;
+  if (val === (item.notes || '')) return;
+  item.notes = val; item.updatedAt = Date.now();
+  saveTransit(transit);
+  const hint = document.getElementById('transit-det-notes-hint');
+  if (hint) { hint.textContent = '已保存 ✓'; hint.classList.add('saved'); }
+}
+function editTransitCurrent() {
+  const item = transit.find(i => i.id === viewingTransitId);
+  if (!item) return;
+  document.getElementById('transit-det-ov').classList.remove('on');
+  formCtx = 'transit';
+  editingId = viewingTransitId; curFiles = [null,null,null]; _editGroupDirty = false;
+  document.getElementById('form-title').textContent = '编辑在途';
+  document.getElementById('f-name').value   = item.name;
+  document.getElementById('f-series').value = item.series||'';
+  document.getElementById('f-price').value  = item.price || '';
+  document.getElementById('f-qty').value    = item.qty != null ? item.qty : '';
+  openPriceBreakdown(item);
+  setBrandField(item.brand||''); updateSeriesDL(item.brand||'');
+  formTags = [...(item.tags||[])]; renderFormTags();
+  _editGroupDirty = false;
+  document.getElementById('f-dex-sync-row').style.display = 'none';
+  document.getElementById('f-group-fg').style.display     = 'none';
+  [0,1,2].forEach(resetSlot);
+  (item.imageKeys||[]).forEach(async(k,n)=>{
+    if(!k) return; const url=await getURL(k); if(url) showSlot(n,url);
+  });
+  document.getElementById('form-ov').classList.add('on');
+}
+
+// ════════════════════════════════════════
+//  Transit — Move to Collection
+// ════════════════════════════════════════
+async function doMoveCurrentTransitToColl() {
+  if (!viewingTransitId) return;
+  document.getElementById('transit-det-ov').classList.remove('on');
+  await moveTransitItemsToColl([viewingTransitId]);
+}
+async function batchMoveTransitToColl() {
+  const ids = [...selectedTransitIds];
+  if (!ids.length) return;
+  await moveTransitItemsToColl(ids);
+  cancelTransitMultiSelect();
+}
+async function moveTransitItemsToColl(ids) {
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  let moved = 0;
+  const oldTransitKeys = []; // IDB keys to clean up after copy
+
+  for (const tid of ids) {
+    const tItem = transit.find(i => i.id === tid);
+    if (!tItem) continue;
+    const newId = 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+
+    // Copy image blobs to new collection keys
+    const newKeys = [null, null, null];
+    for (let n = 0; n < 3; n++) {
+      const oldKey = (tItem.imageKeys||[])[n];
+      if (!oldKey) continue;
+      try {
+        const blob = await idbGet(oldKey);
+        if (blob) {
+          const newKey = `img_${newId}_${n}`;
+          await idbPut(newKey, blob);
+          newKeys[n] = newKey;
+          oldTransitKeys.push(oldKey);
+        }
+      } catch(e) { console.warn('Transit image copy failed:', e); }
+    }
+
+    const collItem = {
+      id: newId, name: tItem.name, brand: tItem.brand, series: tItem.series,
+      pokedexNo: tItem.pokedexNo, price: tItem.price, priceBreakdown: tItem.priceBreakdown,
+      qty: tItem.qty, imageKeys: newKeys, groupId: null,
+      tags: [...(tItem.tags||[])], notes: tItem.notes || '',
+      createdAt: tItem.createdAt || Date.now(), updatedAt: Date.now()
+    };
+    coll.unshift(collItem);
+    syncToDex(collItem); // 自动同步到图鉴（规则4）
+    moved++;
+  }
+
+  // Remove moved items from transit
+  transit = transit.filter(i => !idSet.has(i.id));
+  saveTransit(transit);
+  saveData(coll);
+  renderTransit();
+  render();
+  if (activeTab === 'dex') renderDex();
+  toast(`📬 已将 ${moved} 件移入收藏并同步图鉴`);
+
+  // Clean up old transit image blobs (best-effort)
+  for (const k of oldTransitKeys) {
+    try { await idbDel(k); delete urlCache[k]; } catch(e) {}
+  }
+}
+
+// ════════════════════════════════════════
+//  Transit — Delete
+// ════════════════════════════════════════
+function confirmTransitDel() {
+  const item = transit.find(i => i.id === viewingTransitId);
+  if (!item) return;
+  confMode = 'transit';
+  document.getElementById('conf-icon').textContent  = '🗑';
+  document.getElementById('conf-title').textContent = '从在途删除？';
+  document.getElementById('conf-text').textContent  = `「${item.name}」将从在途中永久删除，包括所有图片。`;
+  document.getElementById('conf-ov').classList.add('on');
+}
+function batchConfirmTransitDel() {
+  const n = selectedTransitIds.size;
+  if (!n) return;
+  confMode = 'batchTransit';
+  document.getElementById('conf-icon').textContent  = '🗑';
+  document.getElementById('conf-title').textContent = `批量删除在途 ${n} 件？`;
+  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+  document.getElementById('conf-ov').classList.add('on');
+}
+async function doDeleteTransit() {
+  const item = transit.find(i => i.id === viewingTransitId);
+  const orphanKeys = (item?.imageKeys||[]).filter(k => !!k);
+  transit = transit.filter(i => i.id !== viewingTransitId);
+  saveTransit(transit);
+  renderTransit();
+  document.getElementById('conf-ov').classList.remove('on');
+  document.getElementById('transit-det-ov').classList.remove('on');
+  toast('🗑 已从在途删除');
+  for (const k of orphanKeys) {
+    try { await idbDel(k); delete urlCache[k]; } catch(e) {}
+  }
+}
+async function doBatchDeleteTransit() {
+  const ids = [...selectedTransitIds];
+  const orphanKeys = [];
+  for (const id of ids) {
+    const item = transit.find(i => i.id === id);
+    if (item) (item.imageKeys||[]).filter(k=>!!k).forEach(k => orphanKeys.push(k));
+  }
+  transit = transit.filter(i => !selectedTransitIds.has(i.id));
+  saveTransit(transit);
+  document.getElementById('conf-ov').classList.remove('on');
+  cancelTransitMultiSelect();
+  toast(`🗑 已删除 ${ids.length} 件在途`);
+  for (const k of orphanKeys) {
+    try { await idbDel(k); delete urlCache[k]; } catch(e) {}
+  }
+}
+
+// ════════════════════════════════════════
 //  Manual Sort
 // ════════════════════════════════════════
-const COLL_ORDER_KEY  = 'muke_coll_manual_order';
-const DEX_ORDER_KEY   = 'muke_dex_manual_order';
-const SHARE_ORDER_KEY = 'muke_share_manual_order';
+const COLL_ORDER_KEY    = 'muke_coll_manual_order';
+const DEX_ORDER_KEY     = 'muke_dex_manual_order';
+const SHARE_ORDER_KEY   = 'muke_share_manual_order';
+const TRANSIT_ORDER_KEY = 'muke_transit_manual_order';
 
 function loadManualOrder(key) {
   try { return JSON.parse(localStorage.getItem(key)) || null; } catch { return null; }
@@ -5189,19 +5854,20 @@ function saveManualOrder(key, arr) {
 let pendingManualSection = null;
 
 function onSortChange(section) {
-  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : 'share-sort';
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : 'share-sort';
   const val   = document.getElementById(selId).value;
-  const key   = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const key   = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
   // Show reset button state
   updateSortResetBtn(section, val);
   // Re-render
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
+  else if (section === 'transit') renderTransit();
   else renderShare();
 }
 
 function updateSortResetBtn(section, val) {
-  const btnId = section === 'coll' ? 'coll-sort-reset' : section === 'dex' ? 'dex-sort-reset' : 'share-sort-reset';
+  const btnId = section === 'coll' ? 'coll-sort-reset' : section === 'dex' ? 'dex-sort-reset' : section === 'transit' ? 'transit-sort-reset' : 'share-sort-reset';
   const btn = document.getElementById(btnId);
   if (btn) btn.style.display = val === 'manual' ? '' : 'none';
 }
@@ -5215,41 +5881,47 @@ function confirmInitManualOrder() {
   document.getElementById('conf-cc-btn').textContent = '再想想';
 
   // Build initial order from current default sort
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
   let items;
   if (section === 'coll') {
     items = [...coll]; items.sort(collSortComparator('default'));
   } else if (section === 'dex') {
     items = [...dex];  items.sort(dexSortComparator('default'));
+  } else if (section === 'transit') {
+    items = [...transit]; items.sort(collSortComparator('default'));
   } else {
     items = [...share]; items.sort(dexSortComparator('default'));
   }
   saveManualOrder(key, items.map(i => i.id));
 
   // Switch the sort dropdown to manual
-  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : 'share-sort';
+  const selId = section === 'coll' ? 'sort' : section === 'dex' ? 'dex-sort' : section === 'transit' ? 'transit-sort' : 'share-sort';
   document.getElementById(selId).value = 'manual';
   updateSortResetBtn(section, 'manual');
 
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
+  else if (section === 'transit') renderTransit();
   else renderShare();
   toast('✅ 手动排序已创建，拖动卡片调整顺序');
 }
 
 function resetManualOrder(section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
   let items;
   if (section === 'coll') {
     items = [...coll]; items.sort(collSortComparator('default'));
   } else if (section === 'dex') {
     items = [...dex];  items.sort(dexSortComparator('default'));
+  } else if (section === 'transit') {
+    items = [...transit]; items.sort(collSortComparator('default'));
   } else {
     items = [...share]; items.sort(dexSortComparator('default'));
   }
   saveManualOrder(key, items.map(i => i.id));
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
+  else if (section === 'transit') renderTransit();
   else renderShare();
   toast('↺ 已按默认顺序重置');
 }
@@ -5258,7 +5930,7 @@ function resetManualOrder(section) {
 let dragSrcId = null, dragSrcSection = null;
 
 function onDragStart(e, id, section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
   if (!loadManualOrder(key)) {
     e.preventDefault();
     pendingManualSection = section;
@@ -5305,7 +5977,7 @@ function onDragEnd(e) {
 let touchDragId = null, touchDragSection = null, touchGhost = null, touchOrigCard = null;
 
 function onTouchStart(e, id, section) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
   if (!loadManualOrder(key)) {
     // Show confirmation on first touch
     pendingManualSection = section;
@@ -5370,8 +6042,8 @@ function onTouchEnd(e, section) {
 }
 
 function doReorderManual(section, srcId, targetId, insertBefore) {
-  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : SHARE_ORDER_KEY;
-  const arr = section === 'coll' ? coll : section === 'dex' ? dex : share;
+  const key = section === 'coll' ? COLL_ORDER_KEY : section === 'dex' ? DEX_ORDER_KEY : section === 'transit' ? TRANSIT_ORDER_KEY : SHARE_ORDER_KEY;
+  const arr = section === 'coll' ? coll : section === 'dex' ? dex : section === 'transit' ? transit : share;
   let order = loadManualOrder(key) || arr.map(i => i.id);
   // Remove src then insert near target
   order = order.filter(id => id !== srcId);
@@ -5384,6 +6056,7 @@ function doReorderManual(section, srcId, targetId, insertBefore) {
   saveManualOrder(key, order);
   if (section === 'coll') render();
   else if (section === 'dex') renderDex();
+  else if (section === 'transit') renderTransit();
   else renderShare();
 }
 
