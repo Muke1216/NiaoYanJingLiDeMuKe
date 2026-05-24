@@ -673,10 +673,9 @@ body.price-hidden #f-price{opacity:.35;pointer-events:none;}
   border-radius:10px;color:#fff;font-size:15px;cursor:pointer;transition:.15s;
   display:flex;align-items:center;}
 .btn-settings:hover{background:rgba(255,255,255,.22);}
-.settings-modal{max-width:360px;}
-.sett-header{margin-bottom:16px;}
-.sett-header-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;}
-.sett-header-desc{font-size:11px;color:var(--muted);line-height:1.6;}
+.settings-modal{max-width:min(660px,96vw);}
+.sett-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 20px;align-items:start;}
+.sett-col-hd{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.04em;padding:2px 0 8px;border-bottom:1px solid var(--border);margin-bottom:2px;}
 .sett-list{display:flex;flex-direction:column;}
 .sett-item{display:flex;align-items:center;justify-content:space-between;
   padding:13px 0;border-bottom:1px solid var(--border);}
@@ -692,8 +691,7 @@ body.price-hidden #f-price{opacity:.35;pointer-events:none;}
 
 /* ── Feature-flag body classes ── */
 /* 物品数量：默认隐藏，打开后显示 */
-.g-tab-cnt{display:none;}
-body.feat-count .g-tab-cnt{display:inline;}
+.g-tab-cnt{display:inline;}
 /* 分组关闭 */
 body.no-groups .group-bar{display:none!important;}
 body.no-groups .transit-group-bar{display:none!important;}
@@ -711,6 +709,8 @@ body.no-tags .tag-filter-row{display:none!important;}
 body.no-tags .c-tags{display:none!important;}
 /* 备注关闭 */
 body.no-notes .det-notes-section{display:none!important;}
+body.no-notes #f-notes-fg{display:none!important;}
+body.no-notes #sf-note-fg{display:none!important;}
 
 /* ── Share module ── */
 .share-toolbar-acts{padding:6px 16px 10px;display:flex;gap:8px;flex-wrap:wrap;}
@@ -787,7 +787,7 @@ body.no-notes .det-notes-section{display:none!important;}
     <div class="h-actions">
       <button class="btn-settings" onclick="openSettings()" title="设置">⚙️</button>
       <button class="btn-backup-icon" onclick="openBackup()" title="备份与恢复">💾</button>
-      <button class="btn-add" onclick="openAdd()">＋ <span class="add-txt">添加收藏</span></button>
+      <button class="btn-add" id="global-add-btn" onclick="openGlobalAdd()">＋ <span class="add-txt">添加收藏</span></button>
     </div>
   </div>
 </header>
@@ -1421,11 +1421,11 @@ body.no-notes .det-notes-section{display:none!important;}
       </div>
       <div class="fg">
         <label class="fl">品牌</label>
-        <input class="fi" id="dex-f-brand" type="text" placeholder="输入品牌名…" list="brand-dl">
+        <input class="fi" id="dex-f-brand" type="text" placeholder="输入品牌名…" list="brand-dl" oninput="updateSeriesDL(this.value.trim())">
       </div>
       <div class="fg">
         <label class="fl">系列</label>
-        <input class="fi" id="dex-f-series" type="text" placeholder="系列名称">
+        <input class="fi" id="dex-f-series" type="text" placeholder="系列名称" list="series-dl">
       </div>
       <div class="fg">
         <label class="fl">图鉴分组</label>
@@ -1528,116 +1528,117 @@ body.no-notes .det-notes-section{display:none!important;}
       <button class="m-close" onclick="closeSettings()">✕</button>
     </div>
     <div class="m-body">
-      <div class="sett-header">
-        <div class="sett-header-title">功能显示</div>
-        <div class="sett-header-desc">关闭后相关栏目隐藏，已填写的数据不会丢失，重新开启即可恢复显示。</div>
-      </div>
-      <div class="sett-list">
-        <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
-          <div class="sett-item-info">
-            <div class="sett-item-name">强制更新</div>
-            <div class="sett-item-desc">清除本地所有缓存并重新加载最新版本，解决版本卡住问题</div>
+      <div class="sett-cols">
+
+        <!-- ── 左栏：内容配置 ── -->
+        <div class="sett-col">
+          <div class="sett-col-hd">内容配置</div>
+          <div class="sett-list">
+            <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+              <div class="sett-item-info">
+                <div class="sett-item-name">强制更新</div>
+                <div class="sett-item-desc">清除缓存并重新加载最新版本</div>
+              </div>
+              <button class="btn-force-update" style="white-space:normal" onclick="forceUpdate()">🔄 清除缓存并更新</button>
+            </div>
+            <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+              <div class="sett-item-info">
+                <div class="sett-item-name">清除所有数据</div>
+                <div class="sett-item-desc">删除全部收藏、图鉴等数据，不可撤销</div>
+              </div>
+              <button class="btn-force-update" style="background:linear-gradient(135deg,var(--red),var(--red2));white-space:normal"
+                onclick="confirmClearData()">🗑 清除所有数据</button>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">分组管理</div>
+                <div class="sett-item-desc">收藏分组标签、筛选</div>
+              </div>
+              <label class="toggle-sw" for="sett-groups">
+                <input type="checkbox" id="sett-groups" onchange="onSettingChange('showGroups',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">标签管理</div>
+                <div class="sett-item-desc">自定义标签与卡片标签显示</div>
+              </div>
+              <label class="toggle-sw" for="sett-tags">
+                <input type="checkbox" id="sett-tags" onchange="onSettingChange('showTags',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">备注设置</div>
+                <div class="sett-item-desc">收藏详情页备注输入框</div>
+              </div>
+              <label class="toggle-sw" for="sett-notes">
+                <input type="checkbox" id="sett-notes" onchange="onSettingChange('showNotes',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">持有数量</div>
+                <div class="sett-item-desc">收藏表单与卡片显示数量</div>
+              </div>
+              <label class="toggle-sw" for="sett-qty">
+                <input type="checkbox" id="sett-qty" onchange="onSettingChange('showQty',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
           </div>
-          <button class="btn-force-update" onclick="forceUpdate()">🔄 清除缓存并强制更新</button>
         </div>
-        <div class="sett-item" style="flex-direction:column;align-items:flex-start;gap:8px">
-          <div class="sett-item-info">
-            <div class="sett-item-name">清除所有数据</div>
-            <div class="sett-item-desc">删除全部收藏、图鉴、分享及图片，操作不可撤销</div>
+
+        <!-- ── 右栏：模块开关 + 安全模式 ── -->
+        <div class="sett-col">
+          <div class="sett-col-hd">模块开关 · 安全</div>
+          <div class="sett-list">
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">在途模块</div>
+                <div class="sett-item-desc">记录运输中的藏品</div>
+              </div>
+              <label class="toggle-sw" for="sett-transit">
+                <input type="checkbox" id="sett-transit" onchange="onSettingChange('showTransit',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">分享模块</div>
+                <div class="sett-item-desc">记录已分享或赠出的藏品</div>
+              </div>
+              <label class="toggle-sw" for="sett-share">
+                <input type="checkbox" id="sett-share" onchange="onSettingChange('showShare',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item">
+              <div class="sett-item-info">
+                <div class="sett-item-name">周边模块</div>
+                <div class="sett-item-desc">周边商品独立管理</div>
+              </div>
+              <label class="toggle-sw" for="sett-merch">
+                <input type="checkbox" id="sett-merch" onchange="onSettingChange('showMerch',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+            <div class="sett-item" style="border-top:2px solid var(--border);margin-top:8px;padding-top:12px">
+              <div class="sett-item-info">
+                <div class="sett-item-name">🔒 安全模式</div>
+                <div class="sett-item-desc">删除、图片修改、移动操作均需二次确认</div>
+              </div>
+              <label class="toggle-sw" for="sett-safemode">
+                <input type="checkbox" id="sett-safemode" onchange="onSettingChange('safeMode',this.checked)">
+                <span class="toggle-track"></span>
+              </label>
+            </div>
           </div>
-          <button class="btn-force-update" style="background:linear-gradient(135deg,var(--red),var(--red2))"
-            onclick="confirmClearData()">🗑 清除所有数据</button>
         </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">分组</div>
-            <div class="sett-item-desc">收藏分组标签、分组筛选、表单分组选择</div>
-          </div>
-          <label class="toggle-sw" for="sett-groups">
-            <input type="checkbox" id="sett-groups" onchange="onSettingChange('showGroups',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">标签</div>
-            <div class="sett-item-desc">自定义标签、标签筛选、卡片标签显示</div>
-          </div>
-          <label class="toggle-sw" for="sett-tags">
-            <input type="checkbox" id="sett-tags" onchange="onSettingChange('showTags',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">备注</div>
-            <div class="sett-item-desc">收藏详情页的备注输入框</div>
-          </div>
-          <label class="toggle-sw" for="sett-notes">
-            <input type="checkbox" id="sett-notes" onchange="onSettingChange('showNotes',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">物品数量</div>
-            <div class="sett-item-desc">在分组标签旁显示该分组内的物品数量</div>
-          </div>
-          <label class="toggle-sw" for="sett-count">
-            <input type="checkbox" id="sett-count" onchange="onSettingChange('showItemCount',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">持有数量</div>
-            <div class="sett-item-desc">收藏表单新增数量字段，卡片和详情页展示持有数量</div>
-          </div>
-          <label class="toggle-sw" for="sett-qty">
-            <input type="checkbox" id="sett-qty" onchange="onSettingChange('showQty',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">在途模块</div>
-            <div class="sett-item-desc">记录已购买、运输中的藏品，到货后一键移入收藏并同步图鉴</div>
-          </div>
-          <label class="toggle-sw" for="sett-transit">
-            <input type="checkbox" id="sett-transit" onchange="onSettingChange('showTransit',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">分享模块</div>
-            <div class="sett-item-desc">记录已分享或赠出的藏品</div>
-          </div>
-          <label class="toggle-sw" for="sett-share">
-            <input type="checkbox" id="sett-share" onchange="onSettingChange('showShare',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">周边模块</div>
-            <div class="sett-item-desc">管理周边商品，独立数据，不与收藏图鉴互通</div>
-          </div>
-          <label class="toggle-sw" for="sett-merch">
-            <input type="checkbox" id="sett-merch" onchange="onSettingChange('showMerch',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
-        <div class="sett-item">
-          <div class="sett-item-info">
-            <div class="sett-item-name">🔒 安全模式</div>
-            <div class="sett-item-desc">开启后所有删除、图片修改、批量移动等操作均需二次确认</div>
-          </div>
-          <label class="toggle-sw" for="sett-safemode">
-            <input type="checkbox" id="sett-safemode" onchange="onSettingChange('safeMode',this.checked)">
-            <span class="toggle-track"></span>
-          </label>
-        </div>
+
       </div>
     </div>
   </div>
@@ -1924,7 +1925,7 @@ body.no-notes .det-notes-section{display:none!important;}
           <option value="">不加入分组</option>
         </select>
       </div>
-      <div class="fg">
+      <div class="fg" id="sf-note-fg">
         <label class="fl">备注</label>
         <textarea class="fta" id="sf-note" placeholder="分享说明、出售理由、心得等…" rows="3"></textarea>
       </div>
@@ -2062,7 +2063,7 @@ async function getURL(key) {
 //  App Settings
 // ════════════════════════════════════════
 const SETT_KEY = 'muke_settings_v1';
-const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showItemCount: false, showQty: false, showTransit: false, showShare: false, showMerch: false, safeMode: false };
+const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showQty: false, showTransit: false, showShare: false, showMerch: false, safeMode: false };
 let appSettings = { ...SETT_DEFAULTS };
 (function loadSettings() {
   try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETT_KEY) || '{}')); } catch {}
@@ -2073,11 +2074,10 @@ function saveSettings() {
 }
 
 function applySettings() {
-  const { showGroups, showTags, showNotes, showItemCount, showQty, showTransit, showShare, showMerch } = appSettings;
+  const { showGroups, showTags, showNotes, showQty, showTransit, showShare, showMerch } = appSettings;
   document.body.classList.toggle('no-groups',    !showGroups);
   document.body.classList.toggle('no-tags',      !showTags);
   document.body.classList.toggle('no-notes',     !showNotes);
-  document.body.classList.toggle('feat-count',   showItemCount);
   document.body.classList.toggle('feat-qty',     showQty);
   // 关闭分组时重置当前分组过滤
   if (!showGroups && activeGroup !== null) { activeGroup = null; }
@@ -2101,7 +2101,6 @@ function openSettings() {
   document.getElementById('sett-groups').checked   = appSettings.showGroups;
   document.getElementById('sett-tags').checked     = appSettings.showTags;
   document.getElementById('sett-notes').checked    = appSettings.showNotes;
-  document.getElementById('sett-count').checked    = appSettings.showItemCount;
   document.getElementById('sett-qty').checked      = appSettings.showQty;
   document.getElementById('sett-transit').checked  = appSettings.showTransit;
   document.getElementById('sett-share').checked    = appSettings.showShare;
@@ -2562,6 +2561,7 @@ function setTab(tab) {
   if (tab === 'share')   renderShare();
   if (tab === 'transit') renderTransit();
   if (tab === 'merch')   renderMerch();
+  _syncAddBtn(tab);
 }
 
 function updateTabBadges() {
@@ -2570,6 +2570,22 @@ function updateTabBadges() {
   document.getElementById('share-badge').textContent   = share.length;
   document.getElementById('transit-badge').textContent = transit.length;
   document.getElementById('merch-badge').textContent   = merch.length;
+}
+
+// ── 顶部添加按钮动态适配当前模块 ─────────────────────────────────────────────
+function _syncAddBtn(tab) {
+  const txt = document.querySelector('#global-add-btn .add-txt');
+  if (!txt) return;
+  const labels = { collection:'添加收藏', transit:'在途入库', merch:'添加周边', share:'添加分享', dex:'添加图鉴' };
+  txt.textContent = labels[tab] || '添加';
+}
+
+function openGlobalAdd() {
+  if      (activeTab === 'collection') openAdd();
+  else if (activeTab === 'transit')    openTransitAdd();
+  else if (activeTab === 'merch')      openMerchAdd();
+  else if (activeTab === 'share')      openShareAdd();
+  else if (activeTab === 'dex')        openDexAdd();
 }
 
 // ════════════════════════════════════════
@@ -3171,9 +3187,12 @@ function renderDex() {
   }).join('');
 
   items.forEach(async entry => {
-    const keys = entry.imageKeys || [];
-    if (!keys[0]) return;
-    const url = await getURL(keys[0]);
+    // 优先显示图鉴独立照片，回退到收藏同步图片
+    const dexKeys  = entry.dexImageKeys || [];
+    const collKeys = entry.imageKeys    || [];
+    const firstKey = dexKeys[0] || collKeys[0];
+    if (!firstKey) return;
+    const url = await getURL(firstKey);
     if (!url) return;
     const el = document.querySelector(`.c-img[data-dexid="${entry.id}"]`);
     if (el) el.innerHTML = `<img src="${url}" alt="${esc(entry.name)}" loading="lazy">`;
@@ -3329,16 +3348,11 @@ function removeSlot(e, n) {
   });
 }
 
-// Progressive image slot reveal: show filled slots + one next-empty slot, hide the rest
+// 始终显示全部三个图片槽
 function syncFormSlotVisibility() {
-  let lastFilled = -1;
-  for (let n = 2; n >= 0; n--) {
-    if (document.getElementById(`slot-${n}`)?.classList.contains('has')) { lastFilled = n; break; }
-  }
-  const showUpTo = Math.min(lastFilled + 1, 2); // index of next add-slot (max 2)
   for (let n = 0; n < 3; n++) {
     const el = document.getElementById(`slot-${n}`);
-    if (el) el.style.display = n <= showUpTo ? '' : 'none';
+    if (el) el.style.display = '';
   }
 }
 
@@ -3551,11 +3565,12 @@ function addToMerchTagBank(tags) {
 }
 
 // Sort an array of tags according to the global tagBank order
-function sortTagsByOrder(tags) {
+function sortTagsByOrder(tags, bankOverride) {
   if (!tags || !tags.length) return [];
+  const bank = bankOverride || tagBank;
   return [...tags].sort((a, b) => {
-    const ia = tagBank.indexOf(a);
-    const ib = tagBank.indexOf(b);
+    const ia = bank.indexOf(a);
+    const ib = bank.indexOf(b);
     if (ia !== -1 && ib !== -1) return ia - ib;
     if (ia !== -1) return -1;
     if (ib !== -1) return 1;
@@ -4361,6 +4376,7 @@ function openDexGroupAssign() {
   if (!dexGroups.length) {
     toast('⚠️ 还没有图鉴分组，请先创建分组'); openDexGroupMgmt(); return;
   }
+  if (!viewingDexId) { toast('⚠️ 请先保存条目，再分配分组'); return; }
   assignDexId = viewingDexId;
   const entry = dex.find(d=>d.id===assignDexId);
   const alreadyIn = new Set(entry?.dexGroupIds || []);
@@ -4489,13 +4505,30 @@ function deleteDexGroup(id) {
 }
 
 // ════════════════════════════════════════
-//  Dex Edit
+//  Dex Add / Edit
 // ════════════════════════════════════════
+function openDexAdd() {
+  editingDexId = null;          // null = 新增模式
+  viewingDexId = null;          // 防止 openDexGroupAssign 误操作旧条目
+  dexCurFiles  = [null, null, null];
+  dexSlotKeys  = [null, null, null];
+  document.getElementById('dex-form-ov').querySelector('.m-title').textContent = '添加图鉴条目';
+  document.getElementById('dex-f-name').value   = '';
+  document.getElementById('dex-f-series').value = '';
+  setDexBrandField('');
+  updateSeriesDL('');
+  [0, 1, 2].forEach(resetDexSlot);
+  const formEl = document.getElementById('dex-form-grp-tags');
+  if (formEl) { formEl.innerHTML = ''; formEl.style.display = 'none'; }
+  document.getElementById('dex-form-ov').classList.add('on');
+}
+
 function editDexCurrent() {
   const entry = dex.find(d=>d.id===viewingDexId);
   if (!entry) return;
   document.getElementById('dex-det-ov').classList.remove('on');
   editingDexId = viewingDexId;
+  document.getElementById('dex-form-ov').querySelector('.m-title').textContent = '编辑图鉴条目';
   // 初始化图鉴图片状态
   dexCurFiles = [null, null, null];
   const existingDexKeys = entry.dexImageKeys || [null, null, null];
@@ -4503,6 +4536,7 @@ function editDexCurrent() {
   document.getElementById('dex-f-name').value   = entry.name;
   document.getElementById('dex-f-series').value = entry.series||'';
   setDexBrandField(entry.brand||'');
+  updateSeriesDL(entry.brand||'');
   // 重置并回填图鉴照片槽
   [0, 1, 2].forEach(resetDexSlot);
   existingDexKeys.forEach(async (k, n) => {
@@ -4525,6 +4559,39 @@ async function saveDexEntry() {
   const brand  = getDexBrand();
   const series = document.getElementById('dex-f-series').value.trim();
   if (!name) { toast('⚠️ 请填写宝可梦名称'); return; }
+
+  // ── 新增模式 ──────────────────────────────────────────────
+  if (editingDexId === null) {
+    const newId = 'dex_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
+    const newDexKeys = [null, null, null];
+    for (let n = 0; n < 3; n++) {
+      if (dexCurFiles[n]) {
+        const blob = await compressFile(dexCurFiles[n]);
+        const key  = `deximg_${newId}_${n}`;
+        await idbPut(key, blob);
+        delete urlCache[key];
+        newDexKeys[n] = key;
+      }
+    }
+    dex.push({
+      id:          newId,
+      name, brand, series,
+      pokedexNo:   lookupDexNo(name),
+      imageKeys:   [],
+      dexImageKeys: newDexKeys,
+      dexGroupIds:  [],
+      addedAt:     Date.now(),
+      updatedAt:   Date.now()
+    });
+    saveDex(dex);
+    renderDex();
+    updateTabBadges();
+    document.getElementById('dex-form-ov').classList.remove('on');
+    toast('✅ 图鉴条目已添加');
+    return;
+  }
+
+  // ── 编辑模式 ──────────────────────────────────────────────
   const idx = dex.findIndex(d=>d.id===editingDexId);
   if (idx === -1) return;
 
@@ -4574,21 +4641,25 @@ let confMode = 'coll'; // 'coll' | 'dex' | 'clearData'
 function confirmDel() {
   const item = coll.find(i=>i.id===viewingId);
   if (!item) return;
-  confMode = 'coll';
-  document.getElementById('conf-title').textContent = '确认删除收藏？';
-  const dexHas = dex.some(d=>d.srcId===item.id);
-  document.getElementById('conf-text').textContent =
-    dexHas ? `「${item.name}」将从收藏中移除，图鉴中的记录会保留。`
-           : `「${item.name}」删除后无法恢复，包括所有图片。`;
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`删除收藏「${item.name}」？`, () => {
+    confMode = 'coll';
+    document.getElementById('conf-title').textContent = '确认删除收藏？';
+    const dexHas = dex.some(d=>d.srcId===item.id);
+    document.getElementById('conf-text').textContent =
+      dexHas ? `「${item.name}」将从收藏中移除，图鉴中的记录会保留。`
+             : `「${item.name}」删除后无法恢复，包括所有图片。`;
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 function confirmDexDel() {
   const entry = dex.find(d=>d.id===viewingDexId);
   if (!entry) return;
-  confMode = 'dex';
-  document.getElementById('conf-title').textContent = '从图鉴删除？';
-  document.getElementById('conf-text').textContent = `「${entry.name}」将从图鉴中永久删除。收藏中的同款不受影响。`;
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`删除图鉴「${entry.name}」？`, () => {
+    confMode = 'dex';
+    document.getElementById('conf-title').textContent = '从图鉴删除？';
+    document.getElementById('conf-text').textContent = `「${entry.name}」将从图鉴中永久删除。收藏中的同款不受影响。`;
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 function closeConf(e) {
   if (e && e.target !== document.getElementById('conf-ov')) return;
@@ -4603,10 +4674,12 @@ function batchConfirmDel() {
   const isColl = multiSelectMode;
   const n = isColl ? selectedIds.size : selectedDexIds.size;
   if (!n) return;
-  confMode = isColl ? 'batchColl' : 'batchDex';
-  document.getElementById('conf-title').textContent = `批量删除 ${n} ${isColl ? '件收藏' : '个图鉴条目'}？`;
-  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`批量删除 ${n} ${isColl ? '件收藏' : '个图鉴条目'}？`, () => {
+    confMode = isColl ? 'batchColl' : 'batchDex';
+    document.getElementById('conf-title').textContent = `批量删除 ${n} ${isColl ? '件收藏' : '个图鉴条目'}？`;
+    document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 
 // Returns true if any other item (collection, dex, or share) still needs this IDB key
@@ -4965,6 +5038,8 @@ async function doExport() {
       dexGroups:  outDexGroups,
       share:      outShare,
       shareGroups: outShareGrps,
+      tagBank,
+      merchTagBank,
       images
     };
 
@@ -5125,6 +5200,22 @@ async function doImport() {
       applyData(SHK,  data.share       || []);
       applyData(SHGK, data.shareGroups || []);
     }
+
+    // 恢复标签库
+    function mergeBank(storageKey, incoming) {
+      if (!incoming || !incoming.length) return;
+      if (mode === 'replace') {
+        try { localStorage.setItem(storageKey, JSON.stringify(incoming)); } catch {}
+      } else {
+        let existing = [];
+        try { existing = JSON.parse(localStorage.getItem(storageKey)) || []; } catch {}
+        const merged = [...existing];
+        incoming.forEach(t => { if (!merged.includes(t)) merged.push(t); });
+        try { localStorage.setItem(storageKey, JSON.stringify(merged)); } catch {}
+      }
+    }
+    if (data.tagBank)      mergeBank(TBK,  data.tagBank);
+    if (data.merchTagBank && doMerch) mergeBank(MTBK, data.merchTagBank);
 
     toast('✅ 恢复成功，即将刷新页面…');
     setTimeout(() => location.reload(), 1400);
@@ -5495,18 +5586,22 @@ async function saveShareItem() {
 function confirmShareDel() {
   const s = share.find(s => s.id === viewingShareId);
   if (!s) return;
-  confMode = 'share';
-  document.getElementById('conf-title').textContent = '从分享中删除？';
-  document.getElementById('conf-text').textContent  = `「${s.name}」将从分享列表永久删除。收藏和图鉴不受影响。`;
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`删除分享「${s.name}」？`, () => {
+    confMode = 'share';
+    document.getElementById('conf-title').textContent = '从分享中删除？';
+    document.getElementById('conf-text').textContent  = `「${s.name}」将从分享列表永久删除。收藏和图鉴不受影响。`;
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 function batchConfirmShareDel() {
   const n = selectedShareIds.size;
   if (!n) return;
-  confMode = 'batchShare';
-  document.getElementById('conf-title').textContent = `批量删除 ${n} 项分享？`;
-  document.getElementById('conf-text').textContent  = '删除后无法恢复，收藏和图鉴中的数据不受影响。';
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`批量删除 ${n} 项分享？`, () => {
+    confMode = 'batchShare';
+    document.getElementById('conf-title').textContent = `批量删除 ${n} 项分享？`;
+    document.getElementById('conf-text').textContent  = '删除后无法恢复，收藏和图鉴中的数据不受影响。';
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 async function doDeleteShare() {
   const s = share.find(s => s.id === viewingShareId);
@@ -5879,13 +5974,15 @@ async function forceUpdate() {
 
 // ── 清除所有用户数据 ──────────────────────────────────────────────────────────
 function confirmClearData() {
-  confMode = 'clearData';
-  document.getElementById('conf-icon').textContent  = '⚠️';
-  document.getElementById('conf-title').textContent = '清除所有数据？';
-  document.getElementById('conf-text').textContent  =
-    '这将永久删除全部收藏、图鉴、分享记录及所有图片，操作无法撤销。\n建议先导出备份。';
-  document.getElementById('settings-ov').classList.remove('on');
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard('清除全部数据？此操作不可撤销，建议先备份！', () => {
+    confMode = 'clearData';
+    document.getElementById('conf-icon').textContent  = '⚠️';
+    document.getElementById('conf-title').textContent = '清除所有数据？';
+    document.getElementById('conf-text').textContent  =
+      '这将永久删除全部收藏、图鉴、分享记录及所有图片，操作无法撤销。\n建议先导出备份。';
+    document.getElementById('settings-ov').classList.remove('on');
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 
 async function doClearAllData() {
@@ -6338,20 +6435,24 @@ async function moveTransitItemsToColl(ids) {
 function confirmTransitDel() {
   const item = transit.find(i => i.id === viewingTransitId);
   if (!item) return;
-  confMode = 'transit';
-  document.getElementById('conf-icon').textContent  = '🗑';
-  document.getElementById('conf-title').textContent = '从在途删除？';
-  document.getElementById('conf-text').textContent  = `「${item.name}」将从在途中永久删除，包括所有图片。`;
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`删除在途「${item.name}」？`, () => {
+    confMode = 'transit';
+    document.getElementById('conf-icon').textContent  = '🗑';
+    document.getElementById('conf-title').textContent = '从在途删除？';
+    document.getElementById('conf-text').textContent  = `「${item.name}」将从在途中永久删除，包括所有图片。`;
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 function batchConfirmTransitDel() {
   const n = selectedTransitIds.size;
   if (!n) return;
-  confMode = 'batchTransit';
-  document.getElementById('conf-icon').textContent  = '🗑';
-  document.getElementById('conf-title').textContent = `批量删除在途 ${n} 件？`;
-  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`批量删除在途 ${n} 件？`, () => {
+    confMode = 'batchTransit';
+    document.getElementById('conf-icon').textContent  = '🗑';
+    document.getElementById('conf-title').textContent = `批量删除在途 ${n} 件？`;
+    document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 async function doDeleteTransit() {
   const item = transit.find(i => i.id === viewingTransitId);
@@ -6556,7 +6657,7 @@ function renderMerch() {
   grid.innerHTML = items.map(m => {
     const sel = selectedMerchIds.has(m.id);
     const grpName = m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
-    const tagHtml = m.tags?.length ? `<div class="c-tags no-tags-hide">${sortTagsByOrder(m.tags).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>` : '';
+    const tagHtml = m.tags?.length ? `<div class="c-tags no-tags-hide">${sortTagsByOrder(m.tags, merchTagBank).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>` : '';
     const noteHtml = m.notes ? `<div class="c-note no-notes-hide">${esc(m.notes.substring(0,40))}${m.notes.length>40?'…':''}</div>` : '';
     const dragAttr = isDraggable
       ? ` draggable="true" ondragstart="onDragStart(event,'${m.id}','merch')" ondragover="onDragOver(event,'${m.id}','merch')" ondrop="onDrop(event,'${m.id}','merch')" ondragend="onDragEnd(event)" ontouchstart="onTouchStart(event,'${m.id}','merch')" ontouchmove="onTouchMove(event,'merch')" ontouchend="onTouchEnd(event,'merch')"`
@@ -6741,11 +6842,13 @@ function confirmMerchDel() {
   if (!merchDetId) return;
   const m = merch.find(x => x.id === merchDetId);
   if (!m) return;
-  confMode = 'merch';
-  document.getElementById('conf-icon').textContent  = '🗑';
-  document.getElementById('conf-title').textContent = `删除「${m.name}」？`;
-  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`删除周边「${m.name}」？`, () => {
+    confMode = 'merch';
+    document.getElementById('conf-icon').textContent  = '🗑';
+    document.getElementById('conf-title').textContent = `删除「${m.name}」？`;
+    document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 async function doDeleteMerch() {
   const m = merch.find(x => x.id === merchDetId);
@@ -6771,14 +6874,16 @@ function batchMerchRemoveFromGroup() {
   cancelMerchMultiSelect();
   toast('已移出分组');
 }
-async function batchConfirmMerchDel() {
+function batchConfirmMerchDel() {
   const n = selectedMerchIds.size;
   if (!n) return;
-  confMode = 'batchMerch';
-  document.getElementById('conf-icon').textContent  = '🗑';
-  document.getElementById('conf-title').textContent = `删除 ${n} 件周边？`;
-  document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
-  document.getElementById('conf-ov').classList.add('on');
+  safeGuard(`批量删除 ${n} 件周边？`, () => {
+    confMode = 'batchMerch';
+    document.getElementById('conf-icon').textContent  = '🗑';
+    document.getElementById('conf-title').textContent = `删除 ${n} 件周边？`;
+    document.getElementById('conf-text').textContent  = '删除后无法恢复，图片也会一并清除。';
+    document.getElementById('conf-ov').classList.add('on');
+  });
 }
 async function doBatchDeleteMerch() {
   const ids = [...selectedMerchIds];

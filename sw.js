@@ -1,6 +1,6 @@
 // ── 木可的毛绒收藏工具 Service Worker ──────────────────────────────────────
 // ⚠️ 每次更新 index.html 后，把下面的版本号 +1，手机会自动拉取新版本
-const CACHE_VER = 'muke-v27';
+const CACHE_VER = 'muke-v33';
 
 // ── 安装：立即激活，绝不预缓存 ───────────────────────────────────────────
 self.addEventListener('install', () => {
