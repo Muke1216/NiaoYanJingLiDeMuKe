@@ -468,13 +468,6 @@ body.price-hidden #f-price-other{opacity:.35;pointer-events:none;}
 .bsp-row label:has(input:checked){
   border-color:var(--teal2);background:rgba(46,184,184,.08);color:var(--teal2);}
 
-/* ── Item quantity (feat-qty toggle) ── */
-body:not(.feat-qty) #f-qty-fg{display:none!important;}
-body:not(.feat-qty) #det-qty-cell{display:none!important;}
-body:not(.feat-qty) .c-qty-badge{display:none!important;}
-.c-qty-badge{display:inline-flex;align-items:center;gap:2px;
-  font-size:10px;font-weight:700;color:var(--teal2);margin-top:2px;}
-.det-qty-val{font-weight:800;color:var(--teal2);font-size:15px;}
 
 /* ── Import scope checkboxes ── */
 .imp-scope-box{background:var(--bg);border-radius:10px;padding:10px 13px;margin-bottom:10px;}
@@ -900,7 +893,7 @@ body.no-notes #sf-note-fg{display:none!important;}
 
   <!-- Dex info bar -->
   <div class="dex-info-bar">
-    <div class="dex-info-inner" id="dex-count-label">图鉴共 0 个宝可梦</div>
+    <div class="dex-info-inner" id="dex-count-label">图鉴共 0 个宝可梦毛绒</div>
   </div>
 
   <!-- Dex Group Tabs -->
@@ -1061,7 +1054,7 @@ body.no-notes #sf-note-fg{display:none!important;}
     <div class="stats-inner">
       <div class="stat">
         <div class="stat-ic a">🎁</div>
-        <div><div class="stat-lbl">周边总数</div><div class="stat-val" id="merch-stat-count">0 件</div></div>
+        <div><div class="stat-lbl" id="merch-stat-lbl">周边总数</div><div class="stat-val" id="merch-stat-count">0 件</div></div>
       </div>
       <div class="stat">
         <div class="stat-ic b">💰</div>
@@ -1158,7 +1151,7 @@ body.no-notes #sf-note-fg{display:none!important;}
       <input type="file" id="fu-1" accept="image/*" onchange="handleFile(event,1)">
       <input type="file" id="fu-2" accept="image/*" onchange="handleFile(event,2)">
 
-      <div class="fg">
+      <div class="fg" id="f-name-fg">
         <label class="fl">宝可梦名称 <span class="req">*</span></label>
         <div class="name-ac-wrap">
           <input class="fi" id="f-name" type="text" placeholder="输入名称自动匹配图鉴…" autocomplete="off"
@@ -1169,10 +1162,11 @@ body.no-notes #sf-note-fg{display:none!important;}
         </div>
       </div>
       <div class="fg" id="f-merch-type-fg" style="display:none">
-        <label class="fl">类型</label>
-        <input class="fi" id="f-merch-type" type="text" placeholder="如：毛绒、卡牌、徽章…" maxlength="20">
+        <label class="fl">类型 <span class="req" id="f-type-req" style="display:none">*</span></label>
+        <input class="fi" id="f-merch-type" type="text" placeholder="如：毛绒、卡牌、徽章…" maxlength="20" list="merch-type-dl">
+        <datalist id="merch-type-dl"></datalist>
       </div>
-      <div class="fg">
+      <div class="fg" id="f-brand-fg">
         <label class="fl">品牌 <span class="req" id="f-brand-req">*</span></label>
         <input class="fi" id="f-brand" type="text" placeholder="输入品牌名，常用品牌可下拉选择…"
           list="brand-dl" oninput="updateSeriesDL(this.value.trim())">
@@ -1183,13 +1177,13 @@ body.no-notes #sf-note-fg{display:none!important;}
           <option value="眼镜厂">
         </datalist>
       </div>
-      <div class="fg">
-        <label class="fl">系列</label>
+      <div class="fg" id="f-series-fg">
+        <label class="fl">系列 <span class="req" id="f-series-req" style="display:none">*</span></label>
         <input class="fi" id="f-series" type="text" placeholder="选择或填写系列名称" list="series-dl">
         <datalist id="series-dl"></datalist>
       </div>
       <div class="fg">
-        <label class="fl">买入价格
+        <label class="fl">买入价格 <span class="req" id="f-price-req" style="display:none">*</span>
           <button type="button" class="btn-price-expand" id="btn-price-expand"
                   onclick="togglePriceBreakdown()">▾ 明细</button>
         </label>
@@ -1232,10 +1226,6 @@ body.no-notes #sf-note-fg{display:none!important;}
         <select class="fsel" id="f-group" onchange="_editGroupDirty=true">
           <option value="">不分组</option>
         </select>
-      </div>
-      <div class="fg" id="f-qty-fg">
-        <label class="fl">持有数量</label>
-        <input class="fi" id="f-qty" type="number" min="1" step="1" placeholder="填写持有数量…" style="max-width:160px">
       </div>
       <div class="fg" id="f-tags-fg">
         <label class="fl">自定义标签 <span style="font-weight:400;color:var(--muted);font-size:11px">最多5个</span></label>
@@ -1284,9 +1274,6 @@ body.no-notes #sf-note-fg{display:none!important;}
       <div class="det-grid">
         <div class="det-cell"><div class="det-cl">买入价格</div><div class="det-cv price" id="det-price"></div></div>
         <div class="det-cell"><div class="det-cl">系列</div><div class="det-cv" id="det-series"></div></div>
-        <div class="det-cell" id="det-qty-cell" style="display:none">
-          <div class="det-cl">持有数量</div><div class="det-cv det-qty-val" id="det-qty"></div>
-        </div>
         <div class="det-cell" id="det-group-cell" style="display:none;grid-column:1/-1">
           <div class="det-cl">分组</div><div class="det-cv" id="det-group"></div>
         </div>
@@ -1309,6 +1296,7 @@ body.no-notes #sf-note-fg{display:none!important;}
       <div class="det-actions">
         <button class="btn-del" onclick="confirmDel()">🗑 删除</button>
         <button class="btn-edit" onclick="editCurrent()">✏️ 编辑</button>
+        <button class="btn-transit-to-coll" onclick="addCurrentToDex()">📖 加入图鉴</button>
       </div>
     </div>
   </div>
@@ -1328,9 +1316,6 @@ body.no-notes #sf-note-fg{display:none!important;}
       <div class="det-grid">
         <div class="det-cell"><div class="det-cl">买入价格</div><div class="det-cv price" id="transit-det-price"></div></div>
         <div class="det-cell"><div class="det-cl">系列</div><div class="det-cv" id="transit-det-series"></div></div>
-        <div class="det-cell" id="transit-det-qty-cell" style="display:none">
-          <div class="det-cl">持有数量</div><div class="det-cv det-qty-val" id="transit-det-qty"></div>
-        </div>
       </div>
       <div class="det-tags-section" id="transit-det-tags-section" style="display:none">
         <div class="det-tags-row" id="transit-det-tags-row"></div>
@@ -1421,7 +1406,7 @@ body.no-notes #sf-note-fg{display:none!important;}
       </div>
       <div class="fg">
         <label class="fl">品牌</label>
-        <input class="fi" id="dex-f-brand" type="text" placeholder="输入品牌名…" list="brand-dl" oninput="updateSeriesDL(this.value.trim())">
+        <input class="fi" id="dex-f-brand" type="text" placeholder="输入品牌名…" list="brand-dl" oninput="updateSeriesDL(this.value.trim(),'coll')">
       </div>
       <div class="fg">
         <label class="fl">系列</label>
@@ -1579,16 +1564,6 @@ body.no-notes #sf-note-fg{display:none!important;}
                 <span class="toggle-track"></span>
               </label>
             </div>
-            <div class="sett-item">
-              <div class="sett-item-info">
-                <div class="sett-item-name">持有数量</div>
-                <div class="sett-item-desc">收藏表单与卡片显示数量</div>
-              </div>
-              <label class="toggle-sw" for="sett-qty">
-                <input type="checkbox" id="sett-qty" onchange="onSettingChange('showQty',this.checked)">
-                <span class="toggle-track"></span>
-              </label>
-            </div>
           </div>
         </div>
 
@@ -1676,12 +1651,16 @@ body.no-notes #sf-note-fg{display:none!important;}
           <div class="backup-sec-desc">选择要导出的范围，可按分组单独导出。</div>
           <div class="bsp-row">
             <label id="exp-transit-label" style="display:none"><input type="checkbox" id="exp-cb-transit" checked><span>在途</span></label>
-            <label class="exp-cb-label" id="exp-cb-merch-label" style="display:none"><input type="checkbox" id="exp-cb-merch" checked> 周边数据</label>
+            <label class="exp-cb-label" id="exp-cb-merch-label" style="display:none"><input type="checkbox" id="exp-cb-merch" checked onchange="updateExpGrpFilters()"> 周边数据</label>
             <label><input type="checkbox" id="exp-cb-coll"  checked onchange="updateExpGrpFilters()"><span>收藏</span></label>
             <label><input type="checkbox" id="exp-cb-dex"   checked onchange="updateExpGrpFilters()"><span>图鉴</span></label>
             <label><input type="checkbox" id="exp-cb-share" checked onchange="updateExpGrpFilters()"><span>分享</span></label>
           </div>
           <!-- 分组筛选 -->
+          <div class="exp-grp-row" id="exp-merch-grp-row">
+            <div class="exp-grp-lbl">周边分组筛选</div>
+            <select class="exp-grp-sel" id="exp-merch-grp"></select>
+          </div>
           <div class="exp-grp-row on" id="exp-coll-grp-row">
             <div class="exp-grp-lbl">收藏分组筛选</div>
             <select class="exp-grp-sel" id="exp-coll-grp"></select>
@@ -2063,7 +2042,7 @@ async function getURL(key) {
 //  App Settings
 // ════════════════════════════════════════
 const SETT_KEY = 'muke_settings_v1';
-const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showQty: false, showTransit: false, showShare: false, showMerch: false, safeMode: false };
+const SETT_DEFAULTS = { showGroups: true, showTags: true, showNotes: true, showTransit: false, showShare: false, showMerch: false, safeMode: false };
 let appSettings = { ...SETT_DEFAULTS };
 (function loadSettings() {
   try { Object.assign(appSettings, JSON.parse(localStorage.getItem(SETT_KEY) || '{}')); } catch {}
@@ -2074,11 +2053,10 @@ function saveSettings() {
 }
 
 function applySettings() {
-  const { showGroups, showTags, showNotes, showQty, showTransit, showShare, showMerch } = appSettings;
+  const { showGroups, showTags, showNotes, showTransit, showShare, showMerch } = appSettings;
   document.body.classList.toggle('no-groups',    !showGroups);
   document.body.classList.toggle('no-tags',      !showTags);
   document.body.classList.toggle('no-notes',     !showNotes);
-  document.body.classList.toggle('feat-qty',     showQty);
   // 关闭分组时重置当前分组过滤
   if (!showGroups && activeGroup !== null) { activeGroup = null; }
   if (!showGroups && activeTransitGroup !== null) { activeTransitGroup = null; }
@@ -2101,7 +2079,6 @@ function openSettings() {
   document.getElementById('sett-groups').checked   = appSettings.showGroups;
   document.getElementById('sett-tags').checked     = appSettings.showTags;
   document.getElementById('sett-notes').checked    = appSettings.showNotes;
-  document.getElementById('sett-qty').checked      = appSettings.showQty;
   document.getElementById('sett-transit').checked  = appSettings.showTransit;
   document.getElementById('sett-share').checked    = appSettings.showShare;
   document.getElementById('sett-merch').checked    = appSettings.showMerch;
@@ -2117,6 +2094,7 @@ function onSettingChange(key, val) {
   saveSettings();
   applySettings();
   render();
+  renderMerch();
 }
 
 // ── 安全模式：所有破坏性操作执行前调用 ──────────────────────────
@@ -2145,7 +2123,8 @@ function loadData()  { try { return JSON.parse(localStorage.getItem(SK)) || []; 
 function saveData(d) { try { localStorage.setItem(SK, JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
 let coll = loadData();
 
-const BRANDS = ['宝可梦中心','Tomy','三英贸易','眼镜厂'];
+const BRANDS       = ['宝可梦中心','Tomy','三英贸易','眼镜厂'];
+const BRANDS_MERCH = ['宝可梦中心','眼镜厂','Tomy'];   // 周边模块专属预设
 // Sort key: predefined brands by index, custom brands alphabetically after
 function brandSortKey(b) {
   const i = BRANDS.indexOf(b);
@@ -2462,6 +2441,7 @@ let activeTransitGroup = null;
 
 const MK  = 'muke_merch_v1';
 const MGK = 'muke_merch_groups_v1';
+const MERCH_FOLDER_ID = '__merch_folder__'; // 固定文件夹分组，不存入 localStorage
 function loadMerch()       { try { return JSON.parse(localStorage.getItem(MK))  || []; } catch { return []; } }
 function saveMerch(d)      { try { localStorage.setItem(MK,  JSON.stringify(d)); } catch { toast('存储空间不足 ⚠️'); } }
 function loadMerchGroups() { try { return JSON.parse(localStorage.getItem(MGK)) || []; } catch { return []; } }
@@ -2796,7 +2776,13 @@ function openBatchGrpPicker(target, mode) {
   const titleMap = { move:'移动到分组', copy:'复制到分组' };
   document.getElementById('batch-grp-title').textContent = titleMap[mode];
 
-  const srcGroups = target === 'coll' ? groups : target === 'dex' ? dexGroups : target === 'transit' ? transitGroups : target === 'merch' ? merchGroups : shareGroups;
+  // 周边：文件夹条目不可跨分组移动，提前拦截
+  if (target === 'merch') {
+    const hasFolderSel = [...selectedMerchIds].some(id => merch.find(m => m.id === id)?.groupId === MERCH_FOLDER_ID);
+    if (hasFolderSel) { toast('⚠️ 文件夹分组条目不可移动到其他分组'); return; }
+  }
+  const srcGroups = target === 'coll' ? groups : target === 'dex' ? dexGroups : target === 'transit' ? transitGroups
+    : target === 'merch' ? merchGroups : shareGroups;
   const listEl    = document.getElementById('batch-grp-list');
   const emptyLabel = target === 'coll' ? '收藏' : target === 'dex' ? '图鉴' : target === 'transit' ? '在途' : target === 'merch' ? '周边' : '分享';
 
@@ -3039,9 +3025,10 @@ function render() {
     const grp = groups.find(g => g.id === activeGroup);
     statLbl   = grp ? grp.name : '当前分组';
   }
+  const totalCount = statItems.length;
   const totalPrice = statItems.reduce((s,i) => s+(parseFloat(i.price)||0), 0);
   document.getElementById('stat-count-lbl').textContent = statLbl;
-  document.getElementById('stat-count').textContent = statItems.length + ' 件';
+  document.getElementById('stat-count').textContent = totalCount + ' 件';
   applyTotalUI(totalPrice);
   updateTabBadges();
 
@@ -3070,7 +3057,6 @@ function render() {
         <div class="c-name">${esc(item.name)}</div>
         <div class="c-sub">${esc(item.brand||'品牌未填')}${item.series?' · '+esc(item.series):''}</div>
         <div class="c-price">${item.price ? '¥'+fmt(item.price) : ''}</div>
-        ${item.qty!=null?`<div class="c-qty-badge">📦 ×${item.qty}</div>`:''}
         ${(item.tags&&item.tags.length)?`<div class="c-tags">${sortTagsByOrder(item.tags).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>`:''}
       </div>
     </div>`;
@@ -3143,7 +3129,7 @@ function renderDex() {
     items.sort(dexSortComparator(sort));
   }
 
-  document.getElementById('dex-count-label').textContent = `图鉴共 ${dex.length} 个宝可梦`;
+  document.getElementById('dex-count-label').textContent = `图鉴共 ${dex.length} 个宝可梦毛绒`;
   renderDexGroupBar();
   updateTabBadges();
 
@@ -3358,12 +3344,19 @@ function syncFormSlotVisibility() {
 
 function getBrand() { return document.getElementById('f-brand').value.trim(); }
 function setBrandField(brand) { document.getElementById('f-brand').value = brand||''; }
-function updateSeriesDL(brand) {
+function updateSeriesDL(brand, srcOverride) {
   const dl = document.getElementById('series-dl');
   dl.innerHTML = '';
   if (!brand) return;
-  [...new Set(coll.filter(i=>i.brand===brand&&i.series).map(i=>i.series))]
+  const useMerch = (srcOverride !== undefined ? srcOverride : formCtx) === 'merch';
+  const pool = useMerch ? merch : coll;
+  [...new Set(pool.filter(i=>i.brand===brand&&i.series).map(i=>i.series))]
     .forEach(s => { const o=document.createElement('option'); o.value=s; dl.appendChild(o); });
+}
+// 根据当前表单上下文更新品牌下拉预设（周边独立，其余共用）
+function _syncBrandDL(ctx) {
+  const brands = (ctx !== undefined ? ctx : formCtx) === 'merch' ? BRANDS_MERCH : BRANDS;
+  document.getElementById('brand-dl').innerHTML = brands.map(b => `<option value="${esc(b)}"></option>`).join('');
 }
 function updateGroupSel() {
   document.getElementById('f-group').innerHTML = '<option value="">不分组</option>' +
@@ -3444,9 +3437,8 @@ function openAdd() {
   document.getElementById('f-name').value   = '';
   document.getElementById('f-series').value = '';
   document.getElementById('f-price').value  = '';
-  document.getElementById('f-qty').value    = '';
   resetPriceBreakdown();
-  setBrandField(''); updateSeriesDL(''); updateGroupSel();
+  setBrandField(''); updateSeriesDL(''); _syncBrandDL(); updateGroupSel();
   document.getElementById('f-group').value = (activeGroup && activeGroup !== '__none__') ? activeGroup : '';
   document.getElementById('f-brand-req').style.display = '';
   document.getElementById('f-merch-type-fg').style.display = 'none';
@@ -3467,9 +3459,8 @@ function openTransitAdd() {
   document.getElementById('f-name').value   = '';
   document.getElementById('f-series').value = '';
   document.getElementById('f-price').value  = '';
-  document.getElementById('f-qty').value    = '';
   resetPriceBreakdown();
-  setBrandField(''); updateSeriesDL('');
+  setBrandField(''); updateSeriesDL(''); _syncBrandDL();
   document.getElementById('f-brand-req').style.display = 'none';
   document.getElementById('f-merch-type-fg').style.display = 'none';
   document.getElementById('f-notes').value = '';
@@ -3550,6 +3541,25 @@ function addToTagBank(tags) {
   let changed = false;
   tags.forEach(t => { if (t && !tagBank.includes(t)) { tagBank.push(t); changed = true; } });
   if (changed) saveTagBank(tagBank);
+}
+
+// ── Merch type input history bank ────────────────────────────
+const MTYPE_BK = 'muke_merch_typebank_v1';
+function loadMerchTypeBank()  { try { return JSON.parse(localStorage.getItem(MTYPE_BK)) || []; } catch { return []; } }
+function saveMerchTypeBank(d) { try { localStorage.setItem(MTYPE_BK, JSON.stringify(d)); } catch {} }
+let merchTypeBank = loadMerchTypeBank();
+
+function addToMerchTypeBank(type) {
+  if (!type) return;
+  if (!merchTypeBank.includes(type)) {
+    merchTypeBank.unshift(type); // 最新录入排最前
+    saveMerchTypeBank(merchTypeBank);
+  }
+}
+function updateMerchTypeDL() {
+  const dl = document.getElementById('merch-type-dl');
+  if (!dl) return;
+  dl.innerHTML = merchTypeBank.map(t => `<option value="${esc(t)}"></option>`).join('');
 }
 
 // ── Merch-independent tag bank ────────────────────────────────
@@ -4086,8 +4096,6 @@ async function saveItem() {
   const name    = document.getElementById('f-name').value.trim();
   const brand   = getBrand();
   const series  = document.getElementById('f-series').value.trim();
-  const qtyRaw  = document.getElementById('f-qty').value;
-  const qty     = qtyRaw === '' ? null : Math.max(1, parseInt(qtyRaw, 10) || 1);
 
   // Determine price from breakdown or total field
   let priceRaw, priceBreakdown;
@@ -4106,8 +4114,17 @@ async function saveItem() {
   const isTransit = formCtx === 'transit';
   const isMerch   = formCtx === 'merch';
 
-  if (!name)              { toast('⚠️ 请填写宝可梦名称'); return; }
+  // 文件夹分组模式：跳过名称必填，改为验证系列/类型/品牌/价格
+  const _fgid = isMerch ? (document.getElementById('f-group')?.value || '') : '';
+  const isMerchFolder = isMerch && _fgid === MERCH_FOLDER_ID;
+
+  if (!name && !isMerchFolder) { toast('⚠️ 请填写宝可梦名称'); return; }
   if (!brand && !isTransit && !isMerch) { toast('⚠️ 请填写品牌名称'); return; }
+  if (isMerchFolder) {
+    if (!series)  { toast('⚠️ 请填写系列名称'); return; }
+    if (!brand)   { toast('⚠️ 请填写品牌名称'); return; }
+    if (!(parseFloat(priceRaw) || 0)) { toast('⚠️ 请填写买入价格'); return; }
+  }
   const isEdit    = !!editingId;
   const id        = editingId || ((isTransit ? 't_' : isMerch ? 'm_' : 'p_') + Date.now() + '_' + Math.random().toString(36).slice(2,6));
   const arr       = isTransit ? transit : isMerch ? merch : coll;
@@ -4127,11 +4144,13 @@ async function saveItem() {
 
   const newDexNo = lookupDexNo(name);
   const formNotes = document.getElementById('f-notes')?.value.trim() ?? '';
+  // 文件夹模式：以系列代替名称存储
+  const savedName = isMerchFolder ? series : name;
   const item = {
-    id, name, brand, series,
+    id, name: savedName, brand, series,
     pokedexNo: newDexNo !== null ? newDexNo : (existing?.pokedexNo ?? null),
     price: priceRaw === '' ? 0 : (parseFloat(priceRaw)||0),
-    priceBreakdown, qty,
+    priceBreakdown,
     imageKeys: newKeys,
     tags: [...formTags],
     notes: formNotes,
@@ -4162,6 +4181,7 @@ async function saveItem() {
     else        { merch.unshift(item); }
     saveMerch(merch);
     addToMerchTagBank(item.tags || []);
+    addToMerchTypeBank(item.type);
     updateTabBadges();
     renderMerch();
     document.getElementById('form-ov').classList.remove('on');
@@ -4224,13 +4244,6 @@ async function openDetail(id) {
     : '';
   document.getElementById('det-price').innerHTML = priceLabel + priceDetail;
   document.getElementById('det-series').textContent = item.series||'—';
-  const qtyCell = document.getElementById('det-qty-cell');
-  if (item.qty != null) {
-    document.getElementById('det-qty').textContent = `×${item.qty}`;
-    qtyCell.style.display = '';
-  } else {
-    qtyCell.style.display = 'none';
-  }
   if (item.groupId) {
     const grp = groups.find(g=>g.id===item.groupId);
     document.getElementById('det-group').textContent = grp?grp.name:'—';
@@ -4265,9 +4278,8 @@ function editCurrent() {
   document.getElementById('f-name').value   = item.name;
   document.getElementById('f-series').value = item.series||'';
   document.getElementById('f-price').value  = item.price || '';
-  document.getElementById('f-qty').value    = item.qty != null ? item.qty : '';
   openPriceBreakdown(item);
-  setBrandField(item.brand||''); updateSeriesDL(item.brand||'');
+  setBrandField(item.brand||''); updateSeriesDL(item.brand||''); _syncBrandDL();
   updateGroupSel(); document.getElementById('f-group').value = item.groupId||'';
   formTags = [...(item.tags||[])]; renderFormTags();
   _editGroupDirty = false;
@@ -4516,7 +4528,7 @@ function openDexAdd() {
   document.getElementById('dex-f-name').value   = '';
   document.getElementById('dex-f-series').value = '';
   setDexBrandField('');
-  updateSeriesDL('');
+  updateSeriesDL('', 'coll'); _syncBrandDL('coll');
   [0, 1, 2].forEach(resetDexSlot);
   const formEl = document.getElementById('dex-form-grp-tags');
   if (formEl) { formEl.innerHTML = ''; formEl.style.display = 'none'; }
@@ -4536,7 +4548,7 @@ function editDexCurrent() {
   document.getElementById('dex-f-name').value   = entry.name;
   document.getElementById('dex-f-series').value = entry.series||'';
   setDexBrandField(entry.brand||'');
-  updateSeriesDL(entry.brand||'');
+  updateSeriesDL(entry.brand||'', 'coll'); _syncBrandDL('coll');
   // 重置并回填图鉴照片槽
   [0, 1, 2].forEach(resetDexSlot);
   existingDexKeys.forEach(async (k, n) => {
@@ -4637,6 +4649,19 @@ async function saveDexEntry() {
 //  Delete (collection + dex, shared confirm modal)
 // ════════════════════════════════════════
 let confMode = 'coll'; // 'coll' | 'dex' | 'clearData'
+
+// 从收藏详情一键添加到图鉴
+function addCurrentToDex() {
+  const item = coll.find(i => i.id === viewingId);
+  if (!item) return;
+  if (dex.some(d => d.srcId === item.id)) {
+    toast('该物件已在图鉴内');
+    return;
+  }
+  syncToDex(item);
+  updateTabBadges();
+  toast('✅ 已添加至图鉴');
+}
 
 function confirmDel() {
   const item = coll.find(i=>i.id===viewingId);
@@ -4943,6 +4968,10 @@ function openBackup() {
   const mkOpts = (arr, label) =>
     `<option value="">全部${label}（不筛选）</option>` +
     arr.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+  document.getElementById('exp-merch-grp').innerHTML =
+    `<option value="">全部周边（不筛选）</option>` +
+    `<option value="${MERCH_FOLDER_ID}">📁 文件夹分组</option>` +
+    merchGroups.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
   document.getElementById('exp-coll-grp').innerHTML  = mkOpts(groups, '收藏');
   document.getElementById('exp-dex-grp').innerHTML   = mkOpts(dexGroups, '图鉴');
   document.getElementById('exp-share-grp').innerHTML = mkOpts(shareGroups, '分享');
@@ -4975,13 +5004,21 @@ async function doExport() {
   btn.textContent = '⏳ 正在打包图片…';
   try {
 
+    const merchGrpF = document.getElementById('exp-merch-grp')?.value  || '';
     const collGrpF  = document.getElementById('exp-coll-grp')?.value  || '';
     const dexGrpF   = document.getElementById('exp-dex-grp')?.value   || '';
     const shareGrpF = document.getElementById('exp-share-grp')?.value || '';
     const outTransit      = expTransit ? transit       : [];
     const outTransitGrps  = expTransit ? transitGroups : [];
-    const outMerch        = expMerch   ? merch         : [];
-    const outMerchGrps    = expMerch   ? merchGroups   : [];
+    // 周边：按分组筛选（空=全部；MERCH_FOLDER_ID=仅文件夹；其他=对应普通分组）
+    const outMerch = expMerch ? (
+      merchGrpF === MERCH_FOLDER_ID ? merch.filter(m => m.groupId === MERCH_FOLDER_ID) :
+      merchGrpF                     ? merch.filter(m => m.groupId === merchGrpF) : merch
+    ) : [];
+    const outMerchGrps = expMerch ? (
+      merchGrpF === MERCH_FOLDER_ID ? [] :
+      merchGrpF                     ? merchGroups.filter(g => g.id === merchGrpF) : merchGroups
+    ) : [];
     const outColl      = expColl  ? (collGrpF  ? coll.filter(i => i.groupId === collGrpF)                                : coll)      : [];
     const outGroups    = expColl  ? (collGrpF  ? groups.filter(g => g.id === collGrpF)                                  : groups)    : [];
     const outDex       = expDex   ? (dexGrpF   ? dex.filter(d => (d.dexGroupIds||[]).includes(dexGrpF))                 : dex)       : [];
@@ -6107,7 +6144,6 @@ function renderTransit() {
         <div class="c-name">${esc(item.name)}</div>
         <div class="c-sub">${esc(item.brand||'品牌未填')}${item.series?' · '+esc(item.series):''}</div>
         <div class="c-price">${item.price ? '¥'+fmt(item.price) : ''}</div>
-        ${item.qty!=null?`<div class="c-qty-badge">📦 ×${item.qty}</div>`:''}
         ${(item.tags&&item.tags.length)?`<div class="c-tags">${sortTagsByOrder(item.tags).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>`:''}
       </div>
     </div>`;
@@ -6285,11 +6321,6 @@ async function openTransitDetail(id) {
     : '';
   document.getElementById('transit-det-price').innerHTML  = priceLabel + priceDetail;
   document.getElementById('transit-det-series').textContent = item.series||'—';
-  const qtyCell = document.getElementById('transit-det-qty-cell');
-  if (item.qty != null) {
-    document.getElementById('transit-det-qty').textContent = `×${item.qty}`;
-    qtyCell.style.display = '';
-  } else { qtyCell.style.display = 'none'; }
 
   const tagsSection = document.getElementById('transit-det-tags-section');
   const tagsRow     = document.getElementById('transit-det-tags-row');
@@ -6337,9 +6368,8 @@ function editTransitCurrent() {
   document.getElementById('f-name').value   = item.name;
   document.getElementById('f-series').value = item.series||'';
   document.getElementById('f-price').value  = item.price || '';
-  document.getElementById('f-qty').value    = item.qty != null ? item.qty : '';
   openPriceBreakdown(item);
-  setBrandField(item.brand||''); updateSeriesDL(item.brand||'');
+  setBrandField(item.brand||''); updateSeriesDL(item.brand||''); _syncBrandDL();
   formTags = [...(item.tags||[])]; renderFormTags();
   _editGroupDirty = false;
   document.getElementById('f-brand-req').style.display = 'none';
@@ -6405,7 +6435,7 @@ async function moveTransitItemsToColl(ids) {
     const collItem = {
       id: newId, name: tItem.name, brand: tItem.brand, series: tItem.series,
       pokedexNo: tItem.pokedexNo, price: tItem.price, priceBreakdown: tItem.priceBreakdown,
-      qty: tItem.qty, imageKeys: newKeys, groupId: null,
+      imageKeys: newKeys, groupId: null,
       tags: [...(tItem.tags||[])], notes: tItem.notes || '',
       createdAt: tItem.createdAt || Date.now(), updatedAt: Date.now()
     };
@@ -6526,6 +6556,9 @@ function renderMerchGroupBar() {
   const ungrouped = merch.filter(m => !m.groupId);
   if (ungrouped.length)
     html += `<div class="g-tab${activeMerchGroup === '__none__' ? ' active' : ''}" onclick="setMerchGroup('__none__')">未归类<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${ungrouped.length}</span></div>`;
+  // 固定文件夹分组
+  const folderCnt = merch.filter(m => m.groupId === MERCH_FOLDER_ID).length;
+  html += `<div class="g-tab${activeMerchGroup === MERCH_FOLDER_ID ? ' active' : ''}" onclick="setMerchGroup('${MERCH_FOLDER_ID}')">📁 文件夹<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${folderCnt}</span></div>`;
   for (const g of merchGroups) {
     const cnt = merch.filter(m => m.groupId === g.id).length;
     html += `<div class="g-tab${activeMerchGroup === g.id ? ' active' : ''}" onclick="setMerchGroup('${esc(g.id)}')">${esc(g.name)}<span class="g-tab-cnt" style="opacity:.65;font-size:12px;margin-left:4px;">${cnt}</span></div>`;
@@ -6543,17 +6576,35 @@ let showMerchTotal = (() => { try { return JSON.parse(localStorage.getItem('muke
 function applyMerchTotalUI() {
   const countEl = document.getElementById('merch-stat-count');
   const totalEl = document.getElementById('merch-stat-total');
-  if (countEl) countEl.textContent = merch.length + ' 件';
+  const lblEl   = document.getElementById('merch-stat-lbl');
+  // 按当前激活分组过滤统计
+  let scopeItems, scopeLabel;
+  if (activeMerchGroup === null) {
+    scopeItems = merch;
+    scopeLabel = '周边总数';
+  } else if (activeMerchGroup === '__none__') {
+    scopeItems = merch.filter(m => !m.groupId);
+    scopeLabel = '未归类';
+  } else if (activeMerchGroup === MERCH_FOLDER_ID) {
+    scopeItems = merch.filter(m => m.groupId === MERCH_FOLDER_ID);
+    scopeLabel = '📁 文件夹';
+  } else {
+    const g = merchGroups.find(g => g.id === activeMerchGroup);
+    scopeItems = merch.filter(m => m.groupId === activeMerchGroup);
+    scopeLabel = g ? g.name : '当前分组';
+  }
+  const mTotalCnt  = scopeItems.length;
+  const mTotalSpnd = scopeItems.reduce((s,m) => s+(parseFloat(m.price)||0), 0);
+  if (lblEl)   lblEl.textContent   = scopeLabel;
+  if (countEl) countEl.textContent = mTotalCnt + ' 件';
   if (totalEl) {
     if (showMerchTotal) {
-      const sum = merch.reduce((s, m) => s + (parseFloat(m.price) || 0), 0);
-      const s = sum.toFixed(2).replace(/\.?0+$/, '');
+      const s = mTotalSpnd.toFixed(2).replace(/\.?0+$/, '');
       totalEl.textContent = '¥' + (s || '0');
     } else {
       totalEl.textContent = '******';
     }
   }
-  // update eye icon
   const eye = document.getElementById('merch-total-eye');
   if (eye) eye.title = showMerchTotal ? '点击隐藏金额' : '点击显示金额';
 }
@@ -6656,7 +6707,10 @@ function renderMerch() {
   }
   grid.innerHTML = items.map(m => {
     const sel = selectedMerchIds.has(m.id);
-    const grpName = m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
+    const isInFolder = m.groupId === MERCH_FOLDER_ID;
+    const grpName = isInFolder ? '文件夹' : m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
+    // 文件夹卡片：主标题=系列；非文件夹卡片：主标题=名称
+    const cardTitle = isInFolder ? (m.series || m.name) : m.name;
     const tagHtml = m.tags?.length ? `<div class="c-tags no-tags-hide">${sortTagsByOrder(m.tags, merchTagBank).map(t=>`<span class="c-tag">${esc(t)}</span>`).join('')}</div>` : '';
     const noteHtml = m.notes ? `<div class="c-note no-notes-hide">${esc(m.notes.substring(0,40))}${m.notes.length>40?'…':''}</div>` : '';
     const dragAttr = isDraggable
@@ -6667,11 +6721,11 @@ function renderMerch() {
       <div class="card-sel-badge${sel?' checked':''}">✓</div>
       <div class="c-img" data-mchid="${m.id}">${pokeBallSVG(60)}</div>
       <div class="c-body">
-        <div class="c-name">${esc(m.name)}</div>
-        ${m.type ? `<div class="c-sub" style="color:var(--accent);font-size:11px">${esc(m.type)}</div>` : ''}
-        <div class="c-sub">${esc(m.brand||'未填品牌')}${m.series?' · '+esc(m.series):''}</div>
+        <div class="c-name">${esc(cardTitle)}</div>
+        ${isInFolder ? '' : m.type ? `<div class="c-sub" style="color:var(--accent);font-size:11px">${esc(m.type)}</div>` : ''}
+        ${isInFolder ? `<div class="c-sub">${esc(m.brand||'')}</div>` : `<div class="c-sub">${esc(m.brand||'未填品牌')}${m.series?' · '+esc(m.series):''}</div>`}
         ${priceStr ? `<div class="c-sub" style="color:var(--accent);font-weight:600;font-size:12px">${priceStr}</div>` : ''}
-        ${grpName ? `<div class="c-sub no-groups-hide" style="font-size:11px;opacity:.7">${esc(grpName)}</div>` : ''}
+        ${(!isInFolder && grpName) ? `<div class="c-sub no-groups-hide" style="font-size:11px;opacity:.7">${esc(grpName)}</div>` : ''}
         ${tagHtml}${noteHtml}
       </div>
     </div>`;
@@ -6683,7 +6737,7 @@ function renderMerch() {
     const url = await getURL(keys[0]);
     if (!url) return;
     const el = document.querySelector(`.c-img[data-mchid="${m.id}"]`);
-    if (el) el.innerHTML = `<img src="${url}" alt="${esc(m.name)}" loading="lazy">`;
+    if (el) el.innerHTML = `<img src="${url}" alt="${esc(m.groupId===MERCH_FOLDER_ID?(m.series||m.name):m.name)}" loading="lazy">`;
   });
 }
 
@@ -6700,15 +6754,18 @@ function openMerchAdd() {
   document.getElementById('f-name').value   = '';
   document.getElementById('f-series').value = '';
   document.getElementById('f-price').value  = '';
-  document.getElementById('f-qty').value    = '';
   resetPriceBreakdown();
-  setBrandField(''); updateSeriesDL('');
+  setBrandField(''); updateSeriesDL(''); _syncBrandDL();
   document.getElementById('f-brand-req').style.display = 'none';
   document.getElementById('f-merch-type').value = '';
   document.getElementById('f-merch-type-fg').style.display = '';
+  updateMerchTypeDL();
   document.getElementById('f-notes').value = '';
-  updateMerchGroupSel();
-  document.getElementById('f-group').value = (activeMerchGroup && activeMerchGroup !== '__none__') ? activeMerchGroup : '';
+  const _mgv = (activeMerchGroup && activeMerchGroup !== '__none__') ? activeMerchGroup : '';
+  const _isFolderAdd = _mgv === MERCH_FOLDER_ID;
+  updateMerchGroupSel(_isFolderAdd);
+  document.getElementById('f-group').value = _mgv;
+  _applyMerchFolderFormMode(_isFolderAdd);
   formTags = []; renderFormTags();
   document.getElementById('f-dex-sync-row').style.display = 'none';
   document.getElementById('f-group-fg').style.display     = '';
@@ -6716,9 +6773,48 @@ function openMerchAdd() {
   syncFormSlotVisibility();
   document.getElementById('form-ov').classList.add('on');
 }
-function updateMerchGroupSel() {
-  document.getElementById('f-group').innerHTML = '<option value="">不分组</option>' +
-    merchGroups.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+// folderMode=true → 仅显示"📁 文件夹"且锁定；false → 显示普通分组（不含文件夹）
+function updateMerchGroupSel(folderMode) {
+  const sel = document.getElementById('f-group');
+  if (!sel) return;
+  if (folderMode) {
+    sel.innerHTML = `<option value="${MERCH_FOLDER_ID}">📁 文件夹</option>`;
+  } else {
+    sel.innerHTML = '<option value="">不分组</option>' +
+      merchGroups.map(g => `<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');
+  }
+}
+// 文件夹模式表单：字段顺序 系列→品牌→价格；类型自动填充并隐藏；名称隐藏；必填标记切换
+function _applyMerchFolderFormMode(isFolder) {
+  // ① 名称字段
+  const nameFg = document.getElementById('f-name-fg');
+  if (nameFg) nameFg.style.display = isFolder ? 'none' : '';
+  // ② 类型字段：文件夹模式自动填"文件夹"并隐藏；普通模式由调用方控制
+  const typeFg  = document.getElementById('f-merch-type-fg');
+  const typeInp = document.getElementById('f-merch-type');
+  const typeReq = document.getElementById('f-type-req');
+  if (isFolder) {
+    if (typeFg)  typeFg.style.display = 'none';
+    if (typeInp) typeInp.value = '文件夹';
+    if (typeReq) typeReq.style.display = 'none';
+  }
+  // ③ 必填标记
+  const seriesReq = document.getElementById('f-series-req');
+  if (seriesReq) seriesReq.style.display = isFolder ? '' : 'none';
+  const priceReq  = document.getElementById('f-price-req');
+  if (priceReq)  priceReq.style.display  = isFolder ? '' : 'none';
+  const brandReq  = document.getElementById('f-brand-req');
+  if (brandReq)  brandReq.style.display  = isFolder ? '' : 'none';
+  // ④ 字段顺序：文件夹模式 系列→品牌→价格（移动 DOM 节点）
+  const seriesFg = document.getElementById('f-series-fg');
+  const brandFg  = document.getElementById('f-brand-fg');
+  if (seriesFg && brandFg && brandFg.parentNode) {
+    if (isFolder) {
+      brandFg.parentNode.insertBefore(seriesFg, brandFg); // 系列移到品牌前
+    } else {
+      brandFg.parentNode.insertBefore(seriesFg, brandFg.nextSibling); // 恢复：系列在品牌后
+    }
+  }
 }
 function editMerchCurrent() {
   if (!merchDetId) return;
@@ -6730,15 +6826,16 @@ function editMerchCurrent() {
   document.getElementById('f-name').value    = m.name || '';
   document.getElementById('f-merch-type').value = m.type || '';
   document.getElementById('f-merch-type-fg').style.display = '';
+  updateMerchTypeDL();
   document.getElementById('f-notes').value   = m.notes || '';
   document.getElementById('f-series').value  = m.series || '';
   document.getElementById('f-price').value   = m.price || '';
-  document.getElementById('f-qty').value     = m.qty || '';
   resetPriceBreakdown();
-  setBrandField(m.brand || ''); updateSeriesDL(m.brand || '');
-  document.getElementById('f-brand-req').style.display = 'none';
-  updateMerchGroupSel();
+  setBrandField(m.brand || ''); updateSeriesDL(m.brand || ''); _syncBrandDL();
+  const _isFolderEdit = m.groupId === MERCH_FOLDER_ID;
+  updateMerchGroupSel(_isFolderEdit);
   document.getElementById('f-group').value   = m.groupId || '';
+  _applyMerchFolderFormMode(_isFolderEdit);
   formTags = [...(m.tags||[])]; renderFormTags();
   document.getElementById('f-dex-sync-row').style.display = 'none';
   document.getElementById('f-group-fg').style.display     = '';
@@ -6777,9 +6874,10 @@ async function openMerchDetail(id) {
     }
     gallery.innerHTML = html;
   }
-  document.getElementById('merch-det-title').textContent = m.name;
+  const isInFolder = m.groupId === MERCH_FOLDER_ID;
+  document.getElementById('merch-det-title').textContent = isInFolder ? (m.series || m.name) : m.name;
   // meta
-  const grpName = m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
+  const grpName = isInFolder ? '文件夹' : m.groupId ? (merchGroups.find(g => g.id === m.groupId)?.name || '') : '';
   const metaEl = document.getElementById('merch-det-meta');
   let metaHtml = '';
   if (m.brand)  metaHtml += `<div class="det-brand">${esc(m.brand)}</div>`;
@@ -6869,6 +6967,9 @@ async function doDeleteMerch() {
 function batchMerchRemoveFromGroup() {
   const ids = [...selectedMerchIds];
   if (!ids.length) return;
+  // 文件夹条目禁止移出
+  const hasFolderItem = ids.some(id => merch.find(m => m.id === id)?.groupId === MERCH_FOLDER_ID);
+  if (hasFolderItem) { toast('⚠️ 文件夹分组条目不可移出文件夹'); return; }
   merch.forEach(m => { if (ids.includes(m.id)) m.groupId = ''; });
   saveMerch(merch);
   cancelMerchMultiSelect();
@@ -6995,9 +7096,24 @@ function closeMerchGroupMgmt(e) {
 function renderMerchGroupList() {
   const el = document.getElementById('mgrp-list');
   if (!el) return;
-  if (!merchGroups.length) { el.innerHTML = '<div class="grp-empty">还没有分组，创建一个试试吧 ✨</div>'; return; }
+  // 固定文件夹条目（不可排序/删除/改名）
+  const folderCnt = merch.filter(m => m.groupId === MERCH_FOLDER_ID).length;
+  const fixedHtml = `<div class="grp-item">
+    <div class="grp-sort-btns">
+      <button class="btn-grp-mv" disabled title="固定分组">▲</button>
+      <button class="btn-grp-mv" disabled title="固定分组">▼</button>
+    </div>
+    <div class="grp-dot" style="background:var(--accent)"></div>
+    <span style="flex:1;padding:0 4px;font-size:13px;font-weight:600">📁 文件夹</span>
+    <span class="grp-item-count">${folderCnt} 件</span>
+    <span style="font-size:11px;color:var(--muted);padding-right:4px">固定</span>
+  </div>`;
+  if (!merchGroups.length) {
+    el.innerHTML = fixedHtml + '<div class="grp-empty" style="margin-top:8px">还没有自定义分组，创建一个试试吧 ✨</div>';
+    return;
+  }
   const last = merchGroups.length - 1;
-  el.innerHTML = merchGroups.map((g, idx) => {
+  el.innerHTML = fixedHtml + merchGroups.map((g, idx) => {
     const cnt = merch.filter(m => m.groupId === g.id).length;
     return `<div class="grp-item">
       <div class="grp-sort-btns">
@@ -7025,6 +7141,7 @@ function createMerchGroup() {
   const inp = document.getElementById('mgrp-new-name');
   const name = inp.value.trim();
   if (!name) { toast('⚠️ 请填写分组名称'); return; }
+  if (name === '文件夹') { toast('⚠️ 「文件夹」为系统保留名称'); return; }
   if (merchGroups.some(g => g.name === name)) { toast('⚠️ 分组名称已存在'); return; }
   const id = 'mg_' + Date.now() + '_' + Math.random().toString(36).slice(2,5);
   merchGroups.push({ id, name, createdAt: Date.now() });
@@ -7037,6 +7154,7 @@ function createMerchGroup() {
 function renameMerchGroup(gid, name) {
   name = (name||'').trim();
   if (!name) return;
+  if (name === '文件夹') { toast('⚠️ 「文件夹」为系统保留名称'); renderMerchGroupList(); return; }
   const g = merchGroups.find(g => g.id === gid);
   if (g) { g.name = name; saveMerchGroups(merchGroups); renderMerchGroupBar(); }
 }
@@ -7290,6 +7408,8 @@ function updateExpGrpFilters() {
   const showColl  = document.getElementById('exp-cb-coll')?.checked;
   const showDex   = document.getElementById('exp-cb-dex')?.checked;
   const showShare = document.getElementById('exp-cb-share')?.checked;
+  const showMerchCb = document.getElementById('exp-cb-merch')?.checked && appSettings.showMerch;
+  document.getElementById('exp-merch-grp-row')?.classList.toggle('on', !!showMerchCb);
   document.getElementById('exp-coll-grp-row')?.classList.toggle('on',  !!showColl);
   document.getElementById('exp-dex-grp-row')?.classList.toggle('on',   !!showDex);
   document.getElementById('exp-share-grp-row')?.classList.toggle('on', !!showShare);
